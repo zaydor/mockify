@@ -5,12 +5,22 @@
                 <h1>
                     Log In
                 </h1>
-                <button (click)="requestAccess()">log in</button>
-                <button (click)="printCookies()">print cookies</button>
-                <button (click)="deleteAllCookies()">delete all cookies</button>
-                <button routerLink="/home">home</button>
-                <button (click)="getToken()">get token</button>
-                <button (click)="getGenres()" *ngIf="this.accessToken">Get Genres</button>
+                <div>
+                    <button (click)="requestAccess()">log in</button>
+                    <button (click)="printCookies()">print cookies</button>
+                    <button (click)="deleteAllCookies()">delete all cookies</button>
+                    <button routerLink="/home">home</button>
+                    <button (click)="getToken()">get token</button>
+                    <button (click)="getGenres()" *ngIf="this.accessToken">Get Genres</button>
+                </div>
+                <div>
+                    <button (click)="updateDatabase()">update db</button>
+                    <button (click)="deleteDatabase()">delete db</button>
+                    <button (click)="setDatabase()">set db</button>
+                </div>
+
+
+
 
             </div>
         </div>

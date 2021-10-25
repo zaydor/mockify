@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { UserCookieService } from '../user-cookie.service';
+import { UserCookieService } from '../services/user-cookie.service';
 import { CookieService } from 'ngx-cookie-service';
 import { __clientID__, __clientSecret__, __redirectURI__, __spotifyScope__ } from '../secrets';
+import { AngularFireDatabase } from '@angular/fire/compat/database';
+import { RealtimeDatabaseService } from '../services/realtime-database.service';
 
 
 @Component({
@@ -13,14 +15,32 @@ export class LoginComponent implements OnInit {
 
   private clientId: string = __clientID__;
   private clientSecret: string = __clientSecret__;
-  private accessToken: string;
+  public accessToken: string;
   private _userCookieService: UserCookieService = new UserCookieService(this.cookieService);
+  private _realtimeDatabase: RealtimeDatabaseService = new RealtimeDatabaseService(this.database);
 
-  constructor(private cookieService: CookieService) {
-
+  constructor(private cookieService: CookieService, private database: AngularFireDatabase) {
+    this.readDatabase();
   }
 
   ngOnInit(): void {
+  }
+
+  setDatabase() {
+    this._realtimeDatabase.setDatabase();
+  }
+
+  readDatabase() {
+    this._realtimeDatabase.readDatabase();
+  }
+
+  updateDatabase() {
+    this._realtimeDatabase.updateDatabase();
+
+  }
+
+  deleteDatabase() {
+    this._realtimeDatabase.deleteDatabase();
   }
 
   printCookies() {
@@ -98,7 +118,7 @@ export class LoginComponent implements OnInit {
 
     const result = await fetch(`https://api.spotify.com/v1/browse/categories/${genreId}/playlists?limit=${limit}`, this.getGET(this.accessToken));
 
-    const data = result.json();
+    const data: any = result.json();
 
     console.log(data);
     console.log(typeof data.items);

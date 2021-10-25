@@ -8,6 +8,10 @@ import { LoginComponent } from './login/login.component';
 import { ProfileComponent } from './profile/profile.component';
 import { SpotifyAuthorizationComponent } from './spotify-authorization/spotify-authorization.component';
 import { CookieService } from 'ngx-cookie-service';
+import { AngularFireModule } from '@angular/fire/compat';
+import { AngularFireDatabaseModule } from '@angular/fire/compat/database';
+import { environment } from '../environments/environment';
+import { RealtimeDatabaseService } from './services/realtime-database.service';
 
 @NgModule({
   declarations: [
@@ -19,9 +23,11 @@ import { CookieService } from 'ngx-cookie-service';
   ],
   imports: [
     BrowserModule,
-    AppRoutingModule
+    AppRoutingModule,
+    AngularFireModule.initializeApp(environment.firebaseConfig),
+    AngularFireDatabaseModule
   ],
-  providers: [CookieService],
+  providers: [CookieService, RealtimeDatabaseService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
