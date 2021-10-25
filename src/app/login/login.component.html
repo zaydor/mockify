@@ -1,0 +1,19 @@
+<section class="hero is-fullheight has-background-primary">
+    <div class="hero-body">
+        <div class="container m-6">
+            <div class="box has-text-centered">
+                <h1>
+                    Log In
+                </h1>
+                <button (click)="requestAccess()">log in</button>
+                <button (click)="printCookies()">print cookies</button>
+                <button (click)="deleteAllCookies()">delete all cookies</button>
+                <button routerLink="/home">home</button>
+                <button (click)="getToken()">get token</button>
+                <button (click)="getGenres()" *ngIf="this.accessToken">Get Genres</button>
+
+            </div>
+        </div>
+
+    </div>
+</section>
