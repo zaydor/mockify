@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
 import { SpotifyAuthorizationComponent } from './spotify-authorization.component';
 
@@ -6,7 +6,7 @@ describe('SpotifyAuthorizationComponent', () => {
   let component: SpotifyAuthorizationComponent;
   let fixture: ComponentFixture<SpotifyAuthorizationComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [ SpotifyAuthorizationComponent ]
     })
