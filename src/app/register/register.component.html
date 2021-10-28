@@ -3,27 +3,15 @@
         <div class="is-centered" style="min-width: 40%;">
             <div class="box has-text-centered">
                 <h1 class="is-size-1">
-                    Log In
+                    Register
                 </h1>
-                <!--div>
-                    <button (click)="requestAccess()">log in</button>
-                    <button (click)="printCookies()">print cookies</button>
-                    <button (click)="deleteAllCookies()">delete all cookies</button>
-                    <button routerLink="/home">home</button>
-                    <button (click)="getToken()">get token</button>
-                    <button (click)="getGenres()" *ngIf="this.accessToken">Get Genres</button>
-                </div>
-                <div>
-                    <button (click)="updateDatabase()">update db</button>
-                    <button (click)="deleteDatabase()">delete db</button>
-                    <button (click)="setDatabase()">set db</button>
-                </div -->
 
                 <div class="form-group" *ngIf='form'>
                     <div class="field">
                         <label class="label is-pulled-left has-text-grey-light">Email</label>
                         <div class="control">
-                            <input [(ngModel)]="form.email" class="input" type="text" placeholder="your@email.com">
+                            <input id="email" [(ngModel)]="form.email" class="input" type="text"
+                                placeholder="your@email.com">
                         </div>
                     </div>
 
@@ -34,21 +22,29 @@
                         </div>
                     </div>
 
+                    <div class="field">
+                        <label class="label is-pulled-left has-text-grey-light">Display Name</label>
+                        <div class="control">
+                            <input id="displayName" [(ngModel)]="form.displayName" class="input" type="text"
+                                placeholder="display name">
+                        </div>
+                    </div>
+
                     <div class="field is-centered">
                         <div class="control">
-                            <button (click)="signAccountIn()" class="button is-link">Log In</button>
+                            <button (click)="createAccount()" class="button is-link">Register</button>
                         </div>
-                        <p id="input-error" class="help is-danger" style="visibility: hidden">Email or password is
-                            incorrect.</p>
+                        <p id="input-error" class="help is-danger" style="visibility: hidden">Email is invalid or
+                            already in use.</p>
                     </div>
                     <div class="field mb-6 mt-4 is-size-7 has-text-grey-light">
                         <span class="is-pulled-left">
                             <a routerLink='/home'>
                                 <- Home </a>
                         </span>
-                        <span class="is-pulled-right ">
+                        <!--span class="is-pulled-right ">
                             <span>
-                                <a routerLink='/register'>Register</a>
+                                <a>Register</a>
                             </span>
                             <span style="cursor: default;">
                                 |
@@ -57,7 +53,7 @@
                                 <a routerLink='/forgot-password'>Forgot
                                     Password?</a>
                             </span>
-                        </span>
+                        </span-->
                     </div>
                 </div>
 
