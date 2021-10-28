@@ -5,7 +5,13 @@
                 <h1>
                     Home
                 </h1>
-                <button routerLink="/login">Log in</button>
+                <div *ngIf='myAuth.currentUser'>
+                    Hello, {{myAuth.currentUser.displayName}}!
+                </div>
+                <button *ngIf='!myAuth.currentUser' routerLink="/login">Log in</button>
+                <button *ngIf='!myAuth.currentUser' routerLink="/register">Create an account</button>
+                <button *ngIf='myAuth.currentUser' (click)="signAccountOut()">Sign out</button>
+                <button *ngIf='myAuth.currentUser' (click)="requestAccessToSpotify()">Link account to Spotify!</button>
             </div>
         </div>
 
