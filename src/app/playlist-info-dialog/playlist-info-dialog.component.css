@@ -1,0 +1,21 @@
+@import 'bulma/css/bulma.css';
+
+
+::ng-deep .cdk-overlay-container {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    justify-content: center;
+    display: flex;
+}
+
+::ng-deep app-playlist-info-dialog.ng-star-inserted {
+    max-height: 90vh;
+    display: inline-block;
+}
+
+::ng-deep mat-dialog-container.mat-dialog-container {
+    overflow: hidden;
+}
+

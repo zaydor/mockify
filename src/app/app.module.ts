@@ -17,6 +17,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatDialogModule } from '@angular/material/dialog';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
 import { RegisterComponent } from './register/register.component';
+import { PlaylistInfoDialogComponent } from './playlist-info-dialog/playlist-info-dialog.component';
 
 @NgModule({
   declarations: [
@@ -26,7 +27,8 @@ import { RegisterComponent } from './register/register.component';
     ProfileComponent,
     SpotifyAuthorizationComponent,
     ForgotPasswordComponent,
-    RegisterComponent
+    RegisterComponent,
+    PlaylistInfoDialogComponent
   ],
   imports: [
     BrowserModule,

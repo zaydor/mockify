@@ -1,14 +1,39 @@
-<section class="hero is-fullheight has-background-primary">
+<section id="profile" class="hero is-fullheight has-background-primary" style="padding-left: calc(100vw - 100%);">
     <div class="hero-body">
-        <div class="container m-6">
+        <div class="container" *ngIf='this.spotifyUser'>
             <div class="box has-text-centered">
-
-                <div *ngIf='this.spotifyUser'>
+                <div>
                     <div>
                         <p>Display Name: {{this.spotifyUser.display_name}}</p>
                         <p>ID: {{this.spotifyUser.id}}</p>
                         <p>Followers: {{this.spotifyUser.followers}}</p>
                         <img src="{{this.spotifyUser.profile_picture_URL}}" />
+                    </div>
+                </div>
+            </div>
+            <div class="has-text-centered" *ngIf="this.userPlaylists">
+                <div>
+                    <div>
+                        <h1 class="my-6">My Playlists</h1>
+                        <div>
+                            <div class="columns is-multiline is-centered">
+                                <div class="box mx-2 column is-4" style="justify-content: center; display: grid;"
+                                    *ngFor="let playlist of userPlaylists; index as i">
+                                    <div style="width: max-content; height: max-content; cursor: pointer;"
+                                        (click)="openPlaylistDialog(i)">
+                                        <div>
+                                            <img src="{{playlist.image.url}}" width="300px" />
+                                        </div>
+                                        <div>
+                                            <p>{{playlist.name}}</p>
+                                            {{playlist.description}}
+                                            <p>tracks: {{playlist.tracksTotal}}</p>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
