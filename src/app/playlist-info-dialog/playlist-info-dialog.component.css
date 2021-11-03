@@ -17,5 +17,12 @@
 
 ::ng-deep mat-dialog-container.mat-dialog-container {
     overflow: hidden;
+    box-shadow: none;
+    background-color: transparent;
+    display: flex;
+    justify-content: center;
 }
 
+::ng-deep .cdk-overlay-dark-backdrop {
+    background-color: transparent;
+}

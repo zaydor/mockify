@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit, Output } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { AngularFireDatabase } from '@angular/fire/compat/database';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
@@ -13,9 +13,10 @@ import { __clientID__, __clientSecret__, __redirectURI__ } from '../secrets';
   styleUrls: ['./profile.component.css']
 })
 export class ProfileComponent implements OnInit {
-  private access_token: string | void;
+  public access_token: string | void = '';
   private refresh_token: string;
   private uid: string;
+  private isDialogOpen: boolean = false;
 
   public spotifyUser: {
     display_name: string,
@@ -46,6 +47,12 @@ export class ProfileComponent implements OnInit {
     "tracksTotal": 50
   }]*/;
 
+  currentSongPlaying = 'test';
+  isSongPlaying: boolean = false;
+  isShuffling: boolean = false;
+  repeatingState = ['off', 'context', 'track'];
+  repeatingIndex = 0;
+
   constructor(private route: ActivatedRoute, private router: Router, private auth: AngularFireAuth, private database: AngularFireDatabase, private dialog: MatDialog) {
   }
 
@@ -58,7 +65,7 @@ export class ProfileComponent implements OnInit {
         this.uid = user.uid;
         const dbRef = await ref(getDatabase());
 
-        get(child(dbRef, `users/${user.uid}/token`)).then(async (snapshot) => {
+        await get(child(dbRef, `users/${user.uid}/token`)).then(async (snapshot) => {
           if (snapshot.exists() && snapshot.val() !== '') { // refresh token exists
             console.log('snapshot val: ' + snapshot.val());
             this.refresh_token = snapshot.val();
@@ -92,6 +99,122 @@ export class ProfileComponent implements OnInit {
     });
   }
 
+  songIsPlaying() {
+    console.log('song is playing');
+  }
+
+  playPauseAction() {
+    if (this.isSongPlaying) {
+      this.pauseSong();
+    } else {
+      this.playSong();
+    }
+
+    this.isSongPlaying = !this.isSongPlaying;
+  }
+
+  shufflingAction() {
+    this.shuffleMusic();
+  }
+
+
+  async setRepeatMode() {
+    if (this.repeatingIndex === 2) {
+      this.repeatingIndex = 0;
+    } else {
+      this.repeatingIndex++;
+    }
+
+    const result = await fetch(`https://api.spotify.com/v1/me/player/repeat?state=${this.repeatingState[this.repeatingIndex]}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.access_token
+      }
+    });
+  }
+
+
+  async playSong() {
+    const result = await fetch('https://api.spotify.com/v1/me/player/play', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.access_token
+      }
+    });
+
+    this.isSongPlaying = true;
+  }
+
+  async pauseSong() {
+    const result = await fetch('https://api.spotify.com/v1/me/player/pause', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.access_token
+      }
+    });
+
+    this.isSongPlaying = false;
+  }
+
+  async nextSongAction() {
+    const result = await fetch('https://api.spotify.com/v1/me/player/next', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.access_token
+      }
+    }).then(() => {
+      this.getCurrentSongName();
+    });
+  }
+
+  async previousSongAction() {
+    const result = await fetch('https://api.spotify.com/v1/me/player/previous', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.access_token
+      }
+    }).then(() => {
+      this.getCurrentSongName();
+    });
+  }
+
+  async shuffleMusic() {
+    this.isShuffling = !this.isShuffling;
+
+    const result = await fetch(`https://api.spotify.com/v1/me/player/shuffle?state=${this.isShuffling}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.access_token,
+      },
+    })
+  }
+
+  @Input()
+  async getCurrentSongName() {
+    const result = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.access_token,
+      },
+    });
+
+    const data = await result.json();
+
+    console.log(data);
+
+    // this.songPlaying.emit();
+
+    this.currentSongPlaying = data.item.name;
+    console.log(this.currentSongPlaying);
+  }
+
   async setUpProfilePage() {
     await this.getSpotifyUserInfo();
     this.userPlaylists = [];
@@ -99,8 +222,18 @@ export class ProfileComponent implements OnInit {
   }
 
   openPlaylistDialog(index) {
+    if (this.isDialogOpen) return;
+
+    this.isDialogOpen = true;
+
+    const cursorElements = document.getElementsByClassName('playlist-box');
+
+    for (let i = 0; i < cursorElements.length; i++) {
+      (cursorElements[i] as HTMLElement).style.cursor = 'default';
+    }
+
     document.getElementsByTagName('html')[0].style.overflowY = 'hidden';
-    document.getElementById('profile').style.opacity = '0.5';
+    //document.getElementById('profile').style.opacity = '0.5';
     // when clicking on a playlist, I want a dialog to open that will show the playlist and all of its tracks
     const dialogRef = this.dialog.open(PlaylistInfoDialogComponent, {
       width: '100%',
@@ -110,9 +243,20 @@ export class ProfileComponent implements OnInit {
       data: [this.userPlaylists[index], this.access_token]
     });
 
+    dialogRef.componentInstance.songPlaying.subscribe(async () => {
+      this.isSongPlaying = true;
+      await this.getCurrentSongName();
+    });
+
     dialogRef.afterClosed().subscribe(() => {
+      this.isDialogOpen = false;
+
+      for (let i = 0; i < cursorElements.length; i++) {
+        (cursorElements[i] as HTMLElement).style.cursor = 'pointer';
+      }
+
       document.getElementsByTagName('html')[0].style.overflowY = 'auto';
-      document.getElementById('profile').style.opacity = '1';
+      //document.getElementById('profile').style.opacity = '1';
     })
 
 

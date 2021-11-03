@@ -18,6 +18,7 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
 import { RegisterComponent } from './register/register.component';
 import { PlaylistInfoDialogComponent } from './playlist-info-dialog/playlist-info-dialog.component';
+import { PlayerComponent } from './player/player.component';
 
 @NgModule({
   declarations: [
@@ -28,7 +29,8 @@ import { PlaylistInfoDialogComponent } from './playlist-info-dialog/playlist-inf
     SpotifyAuthorizationComponent,
     ForgotPasswordComponent,
     RegisterComponent,
-    PlaylistInfoDialogComponent
+    PlaylistInfoDialogComponent,
+    PlayerComponent
   ],
   imports: [
     BrowserModule,

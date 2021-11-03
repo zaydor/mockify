@@ -4,6 +4,7 @@
             <div class="box has-text-centered">
                 <div>
                     <div>
+                        <button routerLink="/home">Home</button>
                         <p>Display Name: {{this.spotifyUser.display_name}}</p>
                         <p>ID: {{this.spotifyUser.id}}</p>
                         <p>Followers: {{this.spotifyUser.followers}}</p>
@@ -19,7 +20,8 @@
                             <div class="columns is-multiline is-centered">
                                 <div class="box mx-2 column is-4" style="justify-content: center; display: grid;"
                                     *ngFor="let playlist of userPlaylists; index as i">
-                                    <div style="width: max-content; height: max-content; cursor: pointer;"
+                                    <div class="playlist-box"
+                                        style="width: max-content; height: max-content; cursor: pointer;"
                                         (click)="openPlaylistDialog(i)">
                                         <div>
                                             <img src="{{playlist.image.url}}" width="300px" />
@@ -40,3 +42,8 @@
         </div>
     </div>
 </section>
+
+<app-player [isSongPlaying]='isSongPlaying' [isShuffling]="isShuffling" [songName]="currentSongPlaying"
+    [repeatingIndex]="repeatingIndex" (playPauseAction)='playPauseAction()' (nextSongAction)='nextSongAction()'
+    (previousSongAction)='previousSongAction()' (shufflingAction)='shufflingAction()'
+    (repeatingAction)='setRepeatMode()' style="position: fixed; width: 30vw; bottom: 0; right: 0;"></app-player>

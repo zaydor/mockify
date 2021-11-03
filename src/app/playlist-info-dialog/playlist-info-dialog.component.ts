@@ -1,4 +1,5 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Content } from '@angular/compiler/src/render3/r3_ast';
+import { Component, EventEmitter, Inject, Input, OnInit, Output } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 
 @Component({
@@ -22,12 +23,16 @@ export class PlaylistInfoDialogComponent implements OnInit {
     albumName: string,
     songName: string,
     songId: string,
-    albumId: string
+    albumId: string,
+    uri: string
   }[];
 
   finishedLoading: boolean = false;
 
-  private access_token: string;
+  public access_token: string;
+
+  @Output()
+  songPlaying = new EventEmitter();
 
   constructor(public dialogRef: MatDialogRef<PlaylistInfoDialogComponent>, @Inject(MAT_DIALOG_DATA) public data: any) {
     this.playlistInfo = this.data[0];
@@ -40,6 +45,28 @@ export class PlaylistInfoDialogComponent implements OnInit {
   }
 
   ngOnInit(): void {
+
+  }
+
+  async playSongsFromPlaylist(index) {
+    const uris = [];
+
+    for (let i = index; i < this.playlistInfo.tracksTotal; i++) {
+      uris.push(this.songsInfo[i].uri);
+    }
+
+    const result = await fetch('https://api.spotify.com/v1/me/player/play', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.access_token,
+      },
+      body: JSON.stringify({ uris: uris })
+    });
+
+    // await this.getCurrentSongName();
+
+    this.songPlaying.emit();
   }
 
   async getTracks(offset?) {
@@ -72,7 +99,8 @@ export class PlaylistInfoDialogComponent implements OnInit {
         albumName: song.album.name,
         albumId: song.album.id,
         artistNames: this.formatArtistsNames(artists),
-        songName: song.name
+        songName: song.name,
+        uri: song.uri
       });
 
     }
