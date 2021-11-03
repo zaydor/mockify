@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { AngularFireDatabase } from '@angular/fire/compat/database';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getDatabase, ref, update } from 'firebase/database';
+import { child, get, getDatabase, ref, update } from 'firebase/database';
 import { CookieService } from 'ngx-cookie-service';
 import { __clientID__, __clientSecret__, __redirectURI__, __spotifyScope__ } from '../secrets';
 import { RealtimeDatabaseService } from '../services/realtime-database.service';
@@ -22,24 +22,33 @@ export class HomeComponent implements OnInit {
   public accessToken: string;
   private _userCookieService: UserCookieService = new UserCookieService(this.cookieService);
 
+  public isSpotifyConnected: boolean = false;
+  public isDoneLoading: boolean = false;
 
   constructor(private auth: AngularFireAuth, private database: AngularFireDatabase, private cookieService: CookieService) {
     this.myAuth = getAuth();
     console.log(this.myAuth.currentUser);
+    this.auth.onAuthStateChanged(async (user) => {
+      if (user !== null) {
+        const dbRef = await ref(getDatabase());
 
-    try {
-      if (this.myAuth.currentUser !== null) {
-        this.auth.onAuthStateChanged((user) => {
-          if (user !== null) {
-            console.log(user.uid);
+        await get(child(dbRef, `users/${user.uid}/token`)).then((snapshot) => {
+          if (snapshot.exists() && snapshot.val() !== '') { // we assume spotify has been connected here since we have a refresh token
+            this.isSpotifyConnected = true;
+            this.isDoneLoading = true;
           }
+
+          console.log(this.isSpotifyConnected);
         });
+        console.log(user.uid);
+      } else {
+        console.log('user is null');
+        this.isDoneLoading = true;
       }
-    } catch (e) {
-
-      console.log('no user should be signed in');
-
-    }
+    }).catch((e) => {
+      console.log('test');
+      console.log('test');
+    });
     // this._realtimeDatabase.setDatabase('users', user.uid, data); // we cam store spotify refresh token like this
     // this.auth.currentUser.then((val) => {
     //   console.log(val.email);

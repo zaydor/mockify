@@ -1,8 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit, Output } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { AngularFireDatabase } from '@angular/fire/compat/database';
+import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 import { child, get, getDatabase, ref, update } from 'firebase/database';
+import { PlaylistInfoDialogComponent } from '../playlist-info-dialog/playlist-info-dialog.component';
 import { __clientID__, __clientSecret__, __redirectURI__ } from '../secrets';
 
 @Component({
@@ -11,9 +13,10 @@ import { __clientID__, __clientSecret__, __redirectURI__ } from '../secrets';
   styleUrls: ['./profile.component.css']
 })
 export class ProfileComponent implements OnInit {
-  private access_token: string | void;
+  public access_token: string | void = '';
   private refresh_token: string;
   private uid: string;
+  private isDialogOpen: boolean = false;
 
   public spotifyUser: {
     display_name: string,
@@ -22,7 +25,35 @@ export class ProfileComponent implements OnInit {
     profile_picture_URL: string,
   };
 
-  constructor(private route: ActivatedRoute, private router: Router, private auth: AngularFireAuth, private database: AngularFireDatabase) {
+  public userPlaylists: {
+    collaborative: boolean,
+    description: string,
+    id: string,
+    name: string,
+    tracksURL: string,
+    image: any,
+    tracksTotal: number
+  }[]/* = [{
+    "id": "5hsMdpSVxLht4uiluWuqSX",
+    "name": "Car Trip With Grandparents",
+    "collaborative": false,
+    "description": "",
+    "image": {
+      "height": 640,
+      "url": "https://mosaic.scdn.co/640/ab67616d0000b2735398a024ab2c2081820654a8ab67616d0000b273a496dc8c33ca6d10668b3157ab67616d0000b273af82af61a16d677bf22f37a1ab67616d0000b273bde8dfd1922129f3d9e3732f",
+      "width": 640
+    },
+    "tracksURL": "https://api.spotify.com/v1/playlists/5hsMdpSVxLht4uiluWuqSX/tracks",
+    "tracksTotal": 50
+  }]*/;
+
+  currentSongPlaying = 'test';
+  isSongPlaying: boolean = false;
+  isShuffling: boolean = false;
+  repeatingState = ['off', 'context', 'track'];
+  repeatingIndex = 0;
+
+  constructor(private route: ActivatedRoute, private router: Router, private auth: AngularFireAuth, private database: AngularFireDatabase, private dialog: MatDialog) {
   }
 
   ngOnInit(): void {
@@ -34,14 +65,14 @@ export class ProfileComponent implements OnInit {
         this.uid = user.uid;
         const dbRef = await ref(getDatabase());
 
-        get(child(dbRef, `users/${user.uid}/token`)).then(async (snapshot) => {
+        await get(child(dbRef, `users/${user.uid}/token`)).then(async (snapshot) => {
           if (snapshot.exists() && snapshot.val() !== '') { // refresh token exists
             console.log('snapshot val: ' + snapshot.val());
             this.refresh_token = snapshot.val();
 
             this.access_token = await this.refreshAccessToken(this.refresh_token);
 
-            this.getSpotifyUserInfo();
+            this.setUpProfilePage();
 
           } else { // refresh token does not exist
             if (this.route.snapshot.firstChild === null) { // TODO: if it does not exist and firstChild is not valid, go back to home
@@ -68,7 +99,166 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  setUpProfilePage() {
+  songIsPlaying() {
+    console.log('song is playing');
+  }
+
+  playPauseAction() {
+    if (this.isSongPlaying) {
+      this.pauseSong();
+    } else {
+      this.playSong();
+    }
+
+    this.isSongPlaying = !this.isSongPlaying;
+  }
+
+  shufflingAction() {
+    this.shuffleMusic();
+  }
+
+
+  async setRepeatMode() {
+    if (this.repeatingIndex === 2) {
+      this.repeatingIndex = 0;
+    } else {
+      this.repeatingIndex++;
+    }
+
+    const result = await fetch(`https://api.spotify.com/v1/me/player/repeat?state=${this.repeatingState[this.repeatingIndex]}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.access_token
+      }
+    });
+  }
+
+
+  async playSong() {
+    const result = await fetch('https://api.spotify.com/v1/me/player/play', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.access_token
+      }
+    });
+
+    this.isSongPlaying = true;
+  }
+
+  async pauseSong() {
+    const result = await fetch('https://api.spotify.com/v1/me/player/pause', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.access_token
+      }
+    });
+
+    this.isSongPlaying = false;
+  }
+
+  async nextSongAction() {
+    const result = await fetch('https://api.spotify.com/v1/me/player/next', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.access_token
+      }
+    }).then(() => {
+      this.getCurrentSongName();
+    });
+  }
+
+  async previousSongAction() {
+    const result = await fetch('https://api.spotify.com/v1/me/player/previous', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.access_token
+      }
+    }).then(() => {
+      this.getCurrentSongName();
+    });
+  }
+
+  async shuffleMusic() {
+    this.isShuffling = !this.isShuffling;
+
+    const result = await fetch(`https://api.spotify.com/v1/me/player/shuffle?state=${this.isShuffling}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.access_token,
+      },
+    })
+  }
+
+  @Input()
+  async getCurrentSongName() {
+    const result = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.access_token,
+      },
+    });
+
+    const data = await result.json();
+
+    console.log(data);
+
+    // this.songPlaying.emit();
+
+    this.currentSongPlaying = data.item.name;
+    console.log(this.currentSongPlaying);
+  }
+
+  async setUpProfilePage() {
+    await this.getSpotifyUserInfo();
+    this.userPlaylists = [];
+    await this.getSpotifyUserPlaylists();
+  }
+
+  openPlaylistDialog(index) {
+    if (this.isDialogOpen) return;
+
+    this.isDialogOpen = true;
+
+    const cursorElements = document.getElementsByClassName('playlist-box');
+
+    for (let i = 0; i < cursorElements.length; i++) {
+      (cursorElements[i] as HTMLElement).style.cursor = 'default';
+    }
+
+    document.getElementsByTagName('html')[0].style.overflowY = 'hidden';
+    //document.getElementById('profile').style.opacity = '0.5';
+    // when clicking on a playlist, I want a dialog to open that will show the playlist and all of its tracks
+    const dialogRef = this.dialog.open(PlaylistInfoDialogComponent, {
+      width: '100%',
+      maxWidth: '100%',
+      maxHeight: '80%',
+      position: { top: '0px', left: '0px' },
+      data: [this.userPlaylists[index], this.access_token]
+    });
+
+    dialogRef.componentInstance.songPlaying.subscribe(async () => {
+      this.isSongPlaying = true;
+      await this.getCurrentSongName();
+    });
+
+    dialogRef.afterClosed().subscribe(() => {
+      this.isDialogOpen = false;
+
+      for (let i = 0; i < cursorElements.length; i++) {
+        (cursorElements[i] as HTMLElement).style.cursor = 'pointer';
+      }
+
+      document.getElementsByTagName('html')[0].style.overflowY = 'auto';
+      //document.getElementById('profile').style.opacity = '1';
+    })
+
 
   }
 
@@ -83,7 +273,7 @@ export class ProfileComponent implements OnInit {
 
     const data = await result.json();
 
-    console.log(data);
+    // console.log(data);
 
     this.spotifyUser = {
       display_name: await data.display_name,
@@ -92,11 +282,63 @@ export class ProfileComponent implements OnInit {
       followers: await data.followers.total
     }
 
-    console.log(this.spotifyUser);
+    // console.log(this.spotifyUser);
   }
 
-  async getSpotifyUserPlaylists() {
+  async getSpotifyUserPlaylists(offset?) {
+    // const result = await fetch('https://api.spotify.com/v1/me/playlists?' + new URLSearchParams({
+    //   limit: '50',
+    //   offset: (offset) ? offset : '0' // if offset exists, put in an offset, otherwise make it 0
+    // }), {
+    //   method: 'GET',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //     'Authorization': 'Bearer ' + this.access_token,
+    //   }
+    // });
+    // console.log('test');
+    const id = this.spotifyUser.id;
+    const result = await fetch(`https://api.spotify.com/v1/users/${id}/playlists?` + new URLSearchParams({
+      limit: '50',
+      offset: (offset) ? offset : '0' // if offset exists, put in an offset, otherwise make it 0
+    }), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.access_token,
+      }
+    });
 
+    const data = await result.json();
+
+    // console.log(data);
+
+    for (let i = 0; i < 50; i++) {
+      const item = data.items[i];
+
+      if (!item) break;
+      if (item.owner.id !== this.spotifyUser.id) continue;
+
+      this.userPlaylists.push({
+        id: item.id,
+        name: item.name,
+        collaborative: item.collaborative,
+        description: item.description,
+        image: item.images[0],
+        tracksURL: item.tracks.href,
+        tracksTotal: item.tracks.total
+      })
+    }
+    if (!offset) offset = 0;
+
+    const newOffset = 50 + offset;
+    if (newOffset < data.total) {
+      this.getSpotifyUserPlaylists(newOffset);
+    } else {
+      this.userPlaylists.pop();
+      console.log(this.userPlaylists);
+    }
+    // store user playlists in an array
   }
 
   async refreshAccessToken(refresh_token) {

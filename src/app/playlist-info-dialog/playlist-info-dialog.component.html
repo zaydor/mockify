@@ -1,0 +1,27 @@
+<section class="hero has-background-danger" style="min-width: 90vw; display: flow-root;" *ngIf="this.finishedLoading">
+    <button class="is-pulled-right mt-5 mr-5" (click)="closeDialog()">close</button>
+    <div class="hero-body">
+        <div class="container m-4">
+            <div class="box has-text-centered" style="overflow-y: scroll; max-height:62vh;">
+                <div class="my-2">
+                    <h1 class="is-size-1">{{this.playlistInfo.name}}</h1>
+                    <h4 class="is-size-4">{{this.playlistInfo.description}}</h4>
+                </div>
+                <div>
+                    <img src="{{this.playlistInfo.image.url}}" width="400px" />
+                </div>
+
+                <div style="justify-content: center; display: grid;">
+                    <div class="my-3 box has-background-info" *ngFor="let song of this.songsInfo; index as i"
+                        style="max-width: 420px; min-width: 420px;">
+                        <p>Track {{getTrackNumber(i)}}</p>
+                        <p>Song Name: {{song.songName}}</p>
+                        <p>By: {{song.artistNames}}</p>
+                        <p>Album: {{song.albumName}}</p>
+                        <button (click)="playSongsFromPlaylist(i)">Play</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

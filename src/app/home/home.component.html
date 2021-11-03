@@ -8,10 +8,36 @@
                 <div *ngIf='myAuth.currentUser'>
                     Hello, {{myAuth.currentUser.displayName}}!
                 </div>
-                <button *ngIf='!myAuth.currentUser' routerLink="/login">Log in</button>
-                <button *ngIf='!myAuth.currentUser' routerLink="/register">Create an account</button>
-                <button *ngIf='myAuth.currentUser' (click)="signAccountOut()">Sign out</button>
-                <button *ngIf='myAuth.currentUser' (click)="requestAccessToSpotify()">Link account to Spotify!</button>
+                <div *ngIf='!myAuth.currentUser'>
+                    <div>
+                        <button routerLink="/login">Log in</button>
+                        <button routerLink="/register">Create an account</button>
+                    </div>
+                </div>
+
+                <div *ngIf='myAuth.currentUser'>
+
+                    <div *ngIf="isDoneLoading">
+                        <span>
+                            <button (click)="signAccountOut()">Sign out</button>
+                            <button *ngIf='!isSpotifyConnected' (click)="requestAccessToSpotify()">Link account to
+                                Spotify!</button>
+                            <button *ngIf='isSpotifyConnected' routerLink="/profile">Profile</button>
+                        </span>
+
+                        <div *ngIf='isSpotifyConnected'>
+
+                        </div>
+
+
+
+
+
+
+                    </div>
+
+
+                </div>
             </div>
         </div>
 
