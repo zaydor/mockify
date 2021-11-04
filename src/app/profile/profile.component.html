@@ -18,15 +18,25 @@
                         <h1 class="my-6">My Playlists</h1>
                         <div>
                             <div class="columns is-multiline is-centered">
-                                <div class="box mx-2 column is-4" style="justify-content: center; display: grid;"
-                                    *ngFor="let playlist of userPlaylists; index as i">
-                                    <div class="playlist-box"
-                                        style="width: max-content; height: max-content; cursor: pointer;"
-                                        (click)="openPlaylistDialog(i)">
-                                        <div>
-                                            <img src="{{playlist.image.url}}" width="300px" />
+                                <div id="{{'box-' + i}}" class="box mx-2 column is-4 playlist-box"
+                                    style="justify-content: center; display: grid; cursor: pointer; "
+                                    *ngFor="let playlist of userPlaylists; index as i"
+                                    (click)="openPlaylistDialog($event, i)">
+                                    <div id="{{'box-' + i}}"
+                                        style="max-width: max-content; max-height: max-content; cursor: pointer; display: grid;">
+                                        <div id="{{'container-' + i}}" class="my-container"
+                                            style="justify-self: center; min-width: 300px;">
+                                            <img id="{{'image-' + i}}" src="{{playlist.image.url}}" width="300px"
+                                                class="image" />
+                                            <div id="{{'middle-' + i}}" class="middle" style="cursor: default;">
+                                                <div id="{{'middleText-' + i}}" class="my-text"
+                                                    (click)="uploadPlaylistToFrontPage(i)">
+                                                    <mat-icon id="{{'middleIcon-' + i}}" aria-hidden="false"
+                                                        aria-label="publish playlist to home page">publish</mat-icon>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div>
+                                        <div id="{{'text-' + i}}" style="max-width: max-content; justify-self: center;">
                                             <p>{{playlist.name}}</p>
                                             {{playlist.description}}
                                             <p>tracks: {{playlist.tracksTotal}}</p>
