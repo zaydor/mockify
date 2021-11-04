@@ -2,14 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { AngularFireDatabase } from '@angular/fire/compat/database';
 import { MatDialog } from '@angular/material/dialog';
-import { PageEvent } from '@angular/material/paginator';
-import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getAuth, signOut } from 'firebase/auth';
 import { child, get, getDatabase, ref, update } from 'firebase/database';
-import { CookieService } from 'ngx-cookie-service';
 import { PlaylistInfoDialogComponent } from '../playlist-info-dialog/playlist-info-dialog.component';
 import { __clientID__, __clientSecret__, __redirectURI__, __spotifyScope__ } from '../secrets';
 import { RealtimeDatabaseService } from '../services/realtime-database.service';
-import { UserCookieService } from '../services/user-cookie.service';
+import { SpotifyApiService } from '../services/spotify-api.service';
 
 @Component({
   selector: 'app-home',
@@ -19,9 +17,13 @@ import { UserCookieService } from '../services/user-cookie.service';
 export class HomeComponent implements OnInit {
 
 
+  // TODO: BUG: clicking text in playlist box does not open playlist dialog
+  // TODO: BUG: playing a song while shuffling does not play the correct song
+
+
   // TODO: set up player on home page
   // TODO: build a full 'page' player && set up genius api with lyrics
-  // TODO: clean up api calls
+  // DONE - clean up api calls
   // TODO: change icon if user playlist is already uploaded to front page
   // TODO: add a easy access button to play a playlist
   // TODO: make the app pretty
@@ -30,8 +32,6 @@ export class HomeComponent implements OnInit {
   private _realtimeDatabase: RealtimeDatabaseService = new RealtimeDatabaseService(this.database);
   public myAuth;
   private clientId: string = __clientID__;
-  private clientSecret: string = __clientSecret__;
-  public accessToken: string;
 
   public isSpotifyConnected: boolean = false;
   public isDoneLoading: boolean = false;
@@ -74,7 +74,19 @@ export class HomeComponent implements OnInit {
 
   public isDialogOpen: boolean = false;
 
-  constructor(private auth: AngularFireAuth, private database: AngularFireDatabase, private dialog: MatDialog) {
+  // MatPaginator Inputs
+  public frontPagePlaylistLength = 0;
+  pageSize = 10;
+
+  shownFrontPagePlaylists = [];
+
+  /*
+
+  ------------------------ HOME PAGE FUNCTIONS ------------------------
+
+ */
+
+  constructor(private auth: AngularFireAuth, private database: AngularFireDatabase, private dialog: MatDialog, private spotifyApiService: SpotifyApiService) {
     this.myAuth = getAuth();
     console.log(this.myAuth.currentUser);
     this.auth.onAuthStateChanged(async (user) => {
@@ -101,19 +113,8 @@ export class HomeComponent implements OnInit {
 
     }).catch((e) => {
       console.log('test');
-      console.log('test');
     });
-    // this._realtimeDatabase.setDatabase('users', user.uid, data); // we cam store spotify refresh token like this
-    // this.auth.currentUser.then((val) => {
-    //   console.log(val.email);
-    // });
   }
-
-  // MatPaginator Inputs
-  public frontPagePlaylistLength = 0;
-  pageSize = 10;
-
-  shownFrontPagePlaylists = [];
 
   pageChange(event) {
     console.log(event);
@@ -158,124 +159,6 @@ export class HomeComponent implements OnInit {
     } else {
       return 'favorite_border';
     }
-  }
-
-  async getSpotifyUserInfo() {
-    const result = await fetch('https://api.spotify.com/v1/me', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + this.access_token
-      }
-    });
-
-    const data = await result.json();
-
-    // console.log(data);
-
-    this.spotifyUser = {
-      display_name: await data.display_name,
-      id: await data.id,
-      profile_picture_URL: await data.images[0].url,
-      followers: await data.followers.total
-    }
-
-    // console.log(this.spotifyUser);
-  }
-
-  async getSpotifyUserPlaylists(offset?) {
-    const result = await fetch('https://api.spotify.com/v1/me/playlists?' + new URLSearchParams({
-      limit: '50',
-      offset: (offset) ? offset : '0' // if offset exists, put in an offset, otherwise make it 0
-    }), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + this.access_token,
-      }
-    });
-
-    const data = await result.json();
-
-    for (let i = 0; i < 50; i++) {
-      const item = data.items[i];
-
-      if (!item) break;
-
-      this.userPlaylists.push({
-        id: item.id,
-        name: item.name,
-        collaborative: item.collaborative,
-        description: item.description,
-        image: item.images[0],
-        tracksURL: item.tracks.href,
-        tracksTotal: item.tracks.total
-      })
-    }
-    if (!offset) offset = 0;
-
-    const newOffset = 50 + offset;
-    if (newOffset < data.total) {
-      this.getSpotifyUserPlaylists(newOffset);
-    } else {
-      this.userPlaylists.pop();
-    }
-    // store user playlists in an array
-  }
-
-  async refreshAccessToken(refresh_token) {
-    const result = await fetch('https://accounts.spotify.com/api/token', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Basic ' + btoa(__clientID__ + ':' + __clientSecret__),
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: `grant_type=refresh_token&refresh_token=${refresh_token}`
-    });
-
-    const data = await result.json();
-
-    console.log('new access token: ' + data.access_token);
-
-    return data.access_token;
-
-    // we have a new access token to use now
-  }
-
-  async unfollowPlaylist(index) {
-    const result = await fetch(`https://api.spotify.com/v1/playlists/${this.frontPagePlaylists[index].id}/followers`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + this.access_token,
-      }
-    });
-
-    console.log('playlist unfollowed');
-  }
-
-  async followPlaylist(index) {
-    if (!this.isSpotifyConnected) {
-      // TODO: prompt user to connect their spotify account if they want to follow a playlist
-      return;
-    }
-
-    if (this.followedPlaylistIndexes.includes(index)) {
-      await this.unfollowPlaylist(index);
-      return;
-    }
-
-    const result = await fetch(`https://api.spotify.com/v1/playlists/${this.frontPagePlaylists[index].id}/followers`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + this.access_token,
-      }
-    });
-
-
-    console.log('playlist followed');
-
   }
 
   openPlaylistDialog(event, index) {
@@ -392,5 +275,86 @@ export class HomeComponent implements OnInit {
 
   ngOnInit(): void {
   }
+
+  /*
+
+  ------------------------ END HOME PAGE FUNCTIONS ------------------------
+
+  */
+
+  /*
+
+  ------------------------ SPOTIFY API CALLS ------------------------
+
+  */
+
+  async refreshAccessToken(refresh_token) {
+    return await this.spotifyApiService.refreshAccessToken(refresh_token);
+  }
+
+  async getSpotifyUserInfo() {
+    this.spotifyUser = await this.spotifyApiService.getSpotifyUserInfo(this.access_token);
+  }
+
+  async getSpotifyUserPlaylists(offset?) {
+    if (!offset) {
+      offset = 0;
+    }
+
+    const data = await this.spotifyApiService.getSpotifyUserPlaylists(this.access_token, this.spotifyUser.id, offset);
+
+    for (let i = 0; i < 50; i++) {
+      const item = data.items[i];
+
+      if (!item) break;
+      if (item.owner.id !== this.spotifyUser.id) continue;
+
+      this.userPlaylists.push({
+        id: item.id,
+        name: item.name,
+        collaborative: item.collaborative,
+        description: item.description,
+        image: item.images[0],
+        tracksURL: item.tracks.href,
+        tracksTotal: item.tracks.total
+      })
+    }
+    if (!offset) offset = 0;
+
+    const newOffset = 50 + offset;
+    if (newOffset < data.total) {
+      this.getSpotifyUserPlaylists(newOffset);
+    } else {
+      this.userPlaylists.pop(); // remove 'liked songs' playlist
+      console.log(this.userPlaylists);
+    }
+  }
+
+  async unfollowPlaylist(id) {
+    await this.spotifyApiService.unfollowPlaylist(this.access_token, id);
+  }
+
+  async followPlaylist(index) {
+    if (!this.isSpotifyConnected) {
+      // TODO: prompt user to connect their spotify account if they want to follow a playlist
+      return;
+    }
+
+    const id = this.frontPagePlaylists[index].id;
+
+    if (this.followedPlaylistIndexes.includes(index)) {
+      await this.unfollowPlaylist(id);
+      return;
+    }
+
+    await this.spotifyApiService.followPlaylist(this.access_token, id);
+
+  }
+
+  /*
+
+  ------------------------ END SPOTIFY API CALLS ------------------------
+
+  */
 
 }

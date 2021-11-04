@@ -37,9 +37,9 @@
                                             </div>
                                         </div>
                                         <div id="{{'text-' + i}}" style="max-width: max-content; justify-self: center;">
-                                            <p>{{playlist.name}}</p>
-                                            {{playlist.description}}
-                                            <p>tracks: {{playlist.tracksTotal}}</p>
+                                            <p id="{{'nameText-' + i}}">{{playlist.name}}</p>
+                                            <p id="{{'descriptionText-' + i}}">{{playlist.description}}</p>
+                                            <p id="{{'tracksText-' + i}}">tracks: {{playlist.tracksTotal}}</p>
                                         </div>
                                     </div>
 
@@ -55,5 +55,5 @@
 
 <app-player [isSongPlaying]='isSongPlaying' [isShuffling]="isShuffling" [songName]="currentSongPlaying"
     [repeatingIndex]="repeatingIndex" (playPauseAction)='playPauseAction()' (nextSongAction)='nextSongAction()'
-    (previousSongAction)='previousSongAction()' (shufflingAction)='shufflingAction()'
-    (repeatingAction)='setRepeatMode()' style="position: fixed; width: 30vw; bottom: 0; right: 0;"></app-player>
+    (previousSongAction)='previousSongAction()' (shufflingAction)='shuffleMusic()' (repeatingAction)='setRepeatMode()'
+    style="position: fixed; width: 30vw; bottom: 0; right: 0;"></app-player>
