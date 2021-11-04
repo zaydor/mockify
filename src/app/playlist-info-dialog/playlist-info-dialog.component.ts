@@ -1,6 +1,6 @@
-import { Content } from '@angular/compiler/src/render3/r3_ast';
-import { Component, EventEmitter, Inject, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Inject, OnInit, Output } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { SpotifyApiService } from '../services/spotify-api.service';
 
 @Component({
   selector: 'app-playlist-info-dialog',
@@ -34,7 +34,13 @@ export class PlaylistInfoDialogComponent implements OnInit {
   @Output()
   songPlaying = new EventEmitter();
 
-  constructor(public dialogRef: MatDialogRef<PlaylistInfoDialogComponent>, @Inject(MAT_DIALOG_DATA) public data: any) {
+  /*
+
+  ------------------------ PLAYLIST INFO DIALOG FUNCTIONS ------------------------
+
+  */
+
+  constructor(public dialogRef: MatDialogRef<PlaylistInfoDialogComponent>, @Inject(MAT_DIALOG_DATA) public data: any, private spotifyApiService: SpotifyApiService) {
     this.playlistInfo = this.data[0];
     this.access_token = this.data[1];
 
@@ -48,6 +54,41 @@ export class PlaylistInfoDialogComponent implements OnInit {
 
   }
 
+  formatArtistsNames(artistNames): string {
+    let string = '';
+    const artistsArr = artistNames;
+    const len = artistsArr.length;
+    for (let i = 0; i < len; i++) {
+      if ((i + 1 === len)) {
+        string += `${artistsArr[i]}`;
+      } else {
+        string += `${artistsArr[i]}, `;
+      }
+    }
+
+    return string;
+  }
+
+  getTrackNumber(index) {
+    return index + 1;
+  }
+
+  closeDialog() {
+    this.dialogRef.close();
+  }
+
+  /*
+
+  ------------------------ END PLAYLIST INFO DIALOG FUNCTIONS ------------------------
+
+  */
+
+  /*
+
+  ------------------------ SPOTIFY API CALLS ------------------------
+
+  */
+
   async playSongsFromPlaylist(index) {
     const uris = [];
 
@@ -55,34 +96,15 @@ export class PlaylistInfoDialogComponent implements OnInit {
       uris.push(this.songsInfo[i].uri);
     }
 
-    const result = await fetch('https://api.spotify.com/v1/me/player/play', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + this.access_token,
-      },
-      body: JSON.stringify({ uris: uris })
-    });
-
-    // await this.getCurrentSongName();
+    await this.spotifyApiService.playSongsFromPlaylist(this.access_token, uris);
 
     this.songPlaying.emit();
   }
 
   async getTracks(offset?) {
-    const result = await fetch(`${this.playlistInfo.tracksURL}?` + new URLSearchParams({
-      limit: '100',
-      offset: (offset) ? offset : '0' // if offset exists, put in an offset, otherwise make it 0
-    }), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + this.access_token
-      }
-    });
+    if (!offset) offset = 0;
 
-    const data = await result.json();
-    console.log(data);
+    const data = await this.spotifyApiService.getTracks(this.access_token, this.playlistInfo.tracksURL, offset);
 
     for (let i = 0; i < 100; i++) {
       if (!data.items[i]) break;
@@ -118,27 +140,10 @@ export class PlaylistInfoDialogComponent implements OnInit {
 
   }
 
-  formatArtistsNames(artistNames): string {
-    let string = '';
-    const artistsArr = artistNames;
-    const len = artistsArr.length;
-    for (let i = 0; i < len; i++) {
-      if ((i + 1 === len)) {
-        string += `${artistsArr[i]}`;
-      } else {
-        string += `${artistsArr[i]}, `;
-      }
-    }
+  /*
 
-    return string;
-  }
+  ------------------------ END SPOTIFY API CALLS ------------------------
 
-  getTrackNumber(index) {
-    return index + 1;
-  }
-
-  closeDialog() {
-    this.dialogRef.close();
-  }
+  */
 
 }

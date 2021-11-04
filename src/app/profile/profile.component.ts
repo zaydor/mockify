@@ -1,11 +1,12 @@
-import { Component, Input, OnInit, Output } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { AngularFireDatabase } from '@angular/fire/compat/database';
-import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 import { child, get, getDatabase, ref, set, update } from 'firebase/database';
 import { PlaylistInfoDialogComponent } from '../playlist-info-dialog/playlist-info-dialog.component';
 import { __clientID__, __clientSecret__, __redirectURI__ } from '../secrets';
+import { SpotifyApiService } from '../services/spotify-api.service';
 
 @Component({
   selector: 'app-profile',
@@ -39,10 +40,15 @@ export class ProfileComponent implements OnInit {
   currentSongPlaying = 'test';
   isSongPlaying: boolean = false;
   isShuffling: boolean = false;
-  repeatingState = ['off', 'context', 'track'];
   repeatingIndex = 0;
 
-  constructor(private route: ActivatedRoute, private router: Router, private auth: AngularFireAuth, private database: AngularFireDatabase, private dialog: MatDialog) {
+  /*
+  
+  ------------------------ PROFILE PAGE FUNCTIONS ------------------------
+  
+  */
+
+  constructor(private route: ActivatedRoute, private router: Router, private auth: AngularFireAuth, private database: AngularFireDatabase, private dialog: MatDialog, private spotifyApiService: SpotifyApiService) {
   }
 
   ngOnInit(): void {
@@ -53,7 +59,7 @@ export class ProfileComponent implements OnInit {
         // TODO: check to see if refresh token exists in database
         this.uid = user.uid;
         this.displayName = user.displayName;
-        const dbRef = await ref(getDatabase());
+        const dbRef = ref(getDatabase());
 
         await get(child(dbRef, `users/${user.uid}/token`)).then(async (snapshot) => {
           if (snapshot.exists() && snapshot.val() !== '') { // refresh token exists
@@ -89,126 +95,7 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  songIsPlaying() {
-    console.log('song is playing');
-  }
 
-  playPauseAction() {
-    if (this.isSongPlaying) {
-      this.pauseSong();
-    } else {
-      this.playSong();
-    }
-
-    this.isSongPlaying = !this.isSongPlaying;
-  }
-
-  shufflingAction() {
-    this.shuffleMusic();
-  }
-
-
-  async setRepeatMode() {
-    if (this.repeatingIndex === 2) {
-      this.repeatingIndex = 0;
-    } else {
-      this.repeatingIndex++;
-    }
-
-    const result = await fetch(`https://api.spotify.com/v1/me/player/repeat?state=${this.repeatingState[this.repeatingIndex]}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + this.access_token
-      }
-    });
-  }
-
-
-  async playSong() {
-    const result = await fetch('https://api.spotify.com/v1/me/player/play', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + this.access_token
-      }
-    });
-
-    this.isSongPlaying = true;
-  }
-
-  async pauseSong() {
-    const result = await fetch('https://api.spotify.com/v1/me/player/pause', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + this.access_token
-      }
-    });
-
-    this.isSongPlaying = false;
-  }
-
-  async nextSongAction() {
-    const result = await fetch('https://api.spotify.com/v1/me/player/next', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + this.access_token
-      }
-    }).then(() => {
-      this.getCurrentSongName();
-    });
-  }
-
-  async previousSongAction() {
-    const result = await fetch('https://api.spotify.com/v1/me/player/previous', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + this.access_token
-      }
-    }).then(() => {
-      this.getCurrentSongName();
-    });
-  }
-
-  async shuffleMusic() {
-    this.isShuffling = !this.isShuffling;
-
-    const result = await fetch(`https://api.spotify.com/v1/me/player/shuffle?state=${this.isShuffling}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + this.access_token,
-      },
-    })
-  }
-
-  async getCurrentSongName() {
-    const result = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + this.access_token,
-      },
-    });
-
-    const data = await result.json();
-
-    console.log(data);
-
-    // this.songPlaying.emit();
-
-    this.currentSongPlaying = data.item.name;
-    console.log(this.currentSongPlaying);
-  }
-
-  async setUpProfilePage() {
-    await this.getSpotifyUserInfo();
-    this.userPlaylists = [];
-    await this.getSpotifyUserPlaylists();
-  }
 
   openPlaylistDialog(event, index) {
     if (this.isDialogOpen) return;
@@ -254,56 +141,122 @@ export class ProfileComponent implements OnInit {
 
   }
 
-  async getSpotifyUserInfo() {
-    const result = await fetch('https://api.spotify.com/v1/me', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + this.access_token
-      }
-    });
+  uploadPlaylistToFrontPage(index) {
+    const playlistToUpload = {
+      id: this.userPlaylists[index].id,
+      name: this.userPlaylists[index].name,
+      description: this.userPlaylists[index].description,
+      image: this.userPlaylists[index].image,
+      tracksURL: this.userPlaylists[index].tracksURL,
+      tracksTotal: this.userPlaylists[index].tracksTotal,
+      spotifyDisplayName: this.spotifyUser.display_name,
+      spotifyId: this.spotifyUser.id,
+      displayName: this.displayName,
+      uid: this.uid
+    };
 
-    const data = await result.json();
+    set(ref(getDatabase(), `frontpage-playlists/${this.uid}/${playlistToUpload.id}`), playlistToUpload);
+  }
 
-    // console.log(data);
+  removePlaylistFromFrontPage(index) {
+    // remove from database
+  }
 
-    this.spotifyUser = {
-      display_name: await data.display_name,
-      id: await data.id,
-      profile_picture_URL: await data.images[0].url,
-      followers: await data.followers.total
+  /*
+
+  ------------------------ END PROFILE PAGE FUNCTIONS ------------------------
+
+  */
+
+
+  /*
+
+  ------------------------ SPOTIFY API CALLS ------------------------
+
+  */
+  async refreshAccessToken(refresh_token) {
+    return await this.spotifyApiService.refreshAccessToken(refresh_token);
+  }
+
+  async getAccessToken(code, uid): Promise<string | void> {
+    const data = await this.spotifyApiService.getAccessToken(code);
+
+    const updates = {};
+    updates[`users/${uid}/token`] = data.refresh_token;
+
+    update(ref(getDatabase()), updates);
+
+    return data.access_token;
+  }
+
+  playPauseAction() {
+    (this.isSongPlaying) ? this.pauseSong() : this.playSong();
+
+    this.isSongPlaying = !this.isSongPlaying;
+  }
+
+  async setRepeatMode() {
+    if (this.repeatingIndex === 2) {
+      this.repeatingIndex = 0;
+    } else {
+      this.repeatingIndex++;
     }
 
-    // console.log(this.spotifyUser);
+    await this.spotifyApiService.setRepeatMode(this.access_token, this.repeatingIndex);
+  }
+
+
+  async playSong() {
+    await this.spotifyApiService.playSong(this.access_token);
+
+    this.isSongPlaying = true;
+  }
+
+  async pauseSong() {
+    await this.spotifyApiService.pauseSong(this.access_token);
+
+    this.isSongPlaying = false;
+  }
+
+  async nextSongAction() {
+    await this.spotifyApiService.nextSong(this.access_token).then(() => {
+      this.getCurrentSongName();
+    });
+  }
+
+  async previousSongAction() {
+    await this.spotifyApiService.previousSong(this.access_token).then(() => {
+      this.getCurrentSongName();
+    });
+  }
+
+  async shuffleMusic() {
+    this.isShuffling = !this.isShuffling;
+
+    await this.spotifyApiService.shuffleMusic(this.access_token, this.isShuffling);
+  }
+
+  async getCurrentSongName() {
+    this.currentSongPlaying = await this.spotifyApiService.getCurrentSongName(this.access_token);
+    console.log(this.currentSongPlaying);
+  }
+
+  async setUpProfilePage() {
+    await this.getSpotifyUserInfo();
+    this.userPlaylists = [];
+    await this.getSpotifyUserPlaylists();
+  }
+
+  async getSpotifyUserInfo() {
+    this.spotifyUser = await this.spotifyApiService.getSpotifyUserInfo(this.access_token);
   }
 
   async getSpotifyUserPlaylists(offset?) {
-    // const result = await fetch('https://api.spotify.com/v1/me/playlists?' + new URLSearchParams({
-    //   limit: '50',
-    //   offset: (offset) ? offset : '0' // if offset exists, put in an offset, otherwise make it 0
-    // }), {
-    //   method: 'GET',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'Authorization': 'Bearer ' + this.access_token,
-    //   }
-    // });
-    // console.log('test');
-    const id = this.spotifyUser.id;
-    const result = await fetch(`https://api.spotify.com/v1/users/${id}/playlists?` + new URLSearchParams({
-      limit: '50',
-      offset: (offset) ? offset : '0' // if offset exists, put in an offset, otherwise make it 0
-    }), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + this.access_token,
-      }
-    });
+    if (!offset) {
+      offset = 0;
+    }
 
-    const data = await result.json();
-
-    // console.log(data);
+    const data = await this.spotifyApiService.getSpotifyUserPlaylists(this.access_token, this.spotifyUser.id, offset);
 
     for (let i = 0; i < 50; i++) {
       const item = data.items[i];
@@ -327,75 +280,15 @@ export class ProfileComponent implements OnInit {
     if (newOffset < data.total) {
       this.getSpotifyUserPlaylists(newOffset);
     } else {
-      this.userPlaylists.pop();
+      this.userPlaylists.pop(); // remove 'liked songs' playlist
       console.log(this.userPlaylists);
     }
-    // store user playlists in an array
   }
 
-  uploadPlaylistToFrontPage(index) {
-    const playlistToUpload = {
-      id: this.userPlaylists[index].id,
-      name: this.userPlaylists[index].name,
-      description: this.userPlaylists[index].description,
-      image: this.userPlaylists[index].image,
-      tracksURL: this.userPlaylists[index].tracksURL,
-      tracksTotal: this.userPlaylists[index].tracksTotal,
-      spotifyDisplayName: this.spotifyUser.display_name,
-      spotifyId: this.spotifyUser.id,
-      displayName: this.displayName,
-      uid: this.uid
-    };
+  /*
 
-    set(ref(getDatabase(), `frontpage-playlists/${this.uid}/${playlistToUpload.id}`), playlistToUpload);
-  }
+  ------------------------ END SPOTIFY API CALLS ------------------------
 
-  removePlaylistFromFrontPage(index) {
-    // remove from database
-  }
-
-  async refreshAccessToken(refresh_token) {
-    const result = await fetch('https://accounts.spotify.com/api/token', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Basic ' + btoa(__clientID__ + ':' + __clientSecret__),
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: `grant_type=refresh_token&refresh_token=${refresh_token}`
-    });
-
-    const data = await result.json();
-
-    console.log('new access token: ' + data.access_token);
-
-    return data.access_token;
-
-    // we have a new access token to use now
-  }
-
-  async getAccessToken(code, uid): Promise<string | void> {
-    await fetch('https://accounts.spotify.com/api/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': 'Basic ' + btoa(__clientID__ + ':' + __clientSecret__)
-      },
-      body: `grant_type=authorization_code&code=${code}&redirect_uri=${__redirectURI__}`
-    }).then(async (result) => {
-      const data = await result.json();
-
-      console.log(data);
-
-      const updates = {};
-      updates[`users/${uid}/token`] = data.refresh_token;
-
-      update(ref(getDatabase()), updates);
-
-
-      return data.access_token;
-    });
-
-
-  }
+  */
 
 }
