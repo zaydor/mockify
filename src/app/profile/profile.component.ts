@@ -3,7 +3,7 @@ import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { AngularFireDatabase } from '@angular/fire/compat/database';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
-import { child, get, getDatabase, ref, update } from 'firebase/database';
+import { child, get, getDatabase, ref, set, update } from 'firebase/database';
 import { PlaylistInfoDialogComponent } from '../playlist-info-dialog/playlist-info-dialog.component';
 import { __clientID__, __clientSecret__, __redirectURI__ } from '../secrets';
 
@@ -16,6 +16,7 @@ export class ProfileComponent implements OnInit {
   public access_token: string | void = '';
   private refresh_token: string;
   private uid: string;
+  private displayName: string;
   private isDialogOpen: boolean = false;
 
   public spotifyUser: {
@@ -33,19 +34,7 @@ export class ProfileComponent implements OnInit {
     tracksURL: string,
     image: any,
     tracksTotal: number
-  }[]/* = [{
-    "id": "5hsMdpSVxLht4uiluWuqSX",
-    "name": "Car Trip With Grandparents",
-    "collaborative": false,
-    "description": "",
-    "image": {
-      "height": 640,
-      "url": "https://mosaic.scdn.co/640/ab67616d0000b2735398a024ab2c2081820654a8ab67616d0000b273a496dc8c33ca6d10668b3157ab67616d0000b273af82af61a16d677bf22f37a1ab67616d0000b273bde8dfd1922129f3d9e3732f",
-      "width": 640
-    },
-    "tracksURL": "https://api.spotify.com/v1/playlists/5hsMdpSVxLht4uiluWuqSX/tracks",
-    "tracksTotal": 50
-  }]*/;
+  }[];
 
   currentSongPlaying = 'test';
   isSongPlaying: boolean = false;
@@ -63,6 +52,7 @@ export class ProfileComponent implements OnInit {
 
         // TODO: check to see if refresh token exists in database
         this.uid = user.uid;
+        this.displayName = user.displayName;
         const dbRef = await ref(getDatabase());
 
         await get(child(dbRef, `users/${user.uid}/token`)).then(async (snapshot) => {
@@ -195,7 +185,6 @@ export class ProfileComponent implements OnInit {
     })
   }
 
-  @Input()
   async getCurrentSongName() {
     const result = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
       method: 'GET',
@@ -221,8 +210,11 @@ export class ProfileComponent implements OnInit {
     await this.getSpotifyUserPlaylists();
   }
 
-  openPlaylistDialog(index) {
+  openPlaylistDialog(event, index) {
     if (this.isDialogOpen) return;
+
+    const targetId = (event.target as HTMLElement).attributes.getNamedItem('id').textContent;
+    if (targetId.startsWith('middle')) return;
 
     this.isDialogOpen = true;
 
@@ -257,7 +249,7 @@ export class ProfileComponent implements OnInit {
 
       document.getElementsByTagName('html')[0].style.overflowY = 'auto';
       //document.getElementById('profile').style.opacity = '1';
-    })
+    });
 
 
   }
@@ -339,6 +331,27 @@ export class ProfileComponent implements OnInit {
       console.log(this.userPlaylists);
     }
     // store user playlists in an array
+  }
+
+  uploadPlaylistToFrontPage(index) {
+    const playlistToUpload = {
+      id: this.userPlaylists[index].id,
+      name: this.userPlaylists[index].name,
+      description: this.userPlaylists[index].description,
+      image: this.userPlaylists[index].image,
+      tracksURL: this.userPlaylists[index].tracksURL,
+      tracksTotal: this.userPlaylists[index].tracksTotal,
+      spotifyDisplayName: this.spotifyUser.display_name,
+      spotifyId: this.spotifyUser.id,
+      displayName: this.displayName,
+      uid: this.uid
+    };
+
+    set(ref(getDatabase(), `frontpage-playlists/${this.uid}/${playlistToUpload.id}`), playlistToUpload);
+  }
+
+  removePlaylistFromFrontPage(index) {
+    // remove from database
   }
 
   async refreshAccessToken(refresh_token) {

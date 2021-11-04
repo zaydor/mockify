@@ -19,6 +19,8 @@ import { ForgotPasswordComponent } from './forgot-password/forgot-password.compo
 import { RegisterComponent } from './register/register.component';
 import { PlaylistInfoDialogComponent } from './playlist-info-dialog/playlist-info-dialog.component';
 import { PlayerComponent } from './player/player.component';
+import { MatIconModule } from '@angular/material/icon';
+import { MatPaginatorModule } from '@angular/material/paginator';
 
 @NgModule({
   declarations: [
@@ -41,7 +43,9 @@ import { PlayerComponent } from './player/player.component';
     FormsModule,
     BrowserAnimationsModule,
     MatDialogModule,
-    AngularFireModule
+    AngularFireModule,
+    MatIconModule,
+    MatPaginatorModule
   ],
   providers: [CookieService, RealtimeDatabaseService],
   bootstrap: [AppComponent]
