@@ -1,11 +1,27 @@
+import { animate, state, style, transition, trigger } from '@angular/animations';
 import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
 
 @Component({
   selector: 'app-player',
   templateUrl: './player.component.html',
-  styleUrls: ['./player.component.css']
+  styleUrls: ['./player.component.css'],
+  animations: [
+    trigger("grow", [
+      state('minimized', style({
+        height: '*'
+      })),
+      state('expanded', style({
+        height: '90vh'
+      })),
+      transition('minimized => expanded', animate('400ms ease-in-out')),
+      transition('expanded => minimized', animate('400ms ease-in-out'))
+    ])
+  ]
 })
 export class PlayerComponent implements OnInit {
+  isExpanded: boolean = false;
+  playerState: string = 'minimized'; // or 'expanded'
+
   isPlayingMusic: boolean = false;
   currentSongName: string = '';
   access_token = '';
@@ -36,10 +52,18 @@ export class PlayerComponent implements OnInit {
   @Output()
   repeatingAction = new EventEmitter();
 
+  @Output()
+  expandAction = new EventEmitter();
+
   constructor() {
   }
 
   ngOnInit(): void {
+  }
+
+  expandPlayer() {
+    this.isExpanded = !this.isExpanded;
+    (this.isExpanded) ? this.playerState = 'expanded' : this.playerState = 'minimized';
   }
 
   playPausePress() {

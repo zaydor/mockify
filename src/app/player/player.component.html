@@ -1,10 +1,19 @@
-<div class="box has-background-info player">
-    <span>
-        <button (click)="previousSongPress()">Back</button>
-        <button (click)="playPausePress()">{{isPlaying()}}</button>
-        <button (click)="nextSongPress()">Next</button>
-        <span>{{songName}}</span>
-        <button (click)="shufflingPress()" class="is-pulled-right">{{shufflingState()}}</button>
-        <button (click)="repeatingPress()" class="is-pulled-right">{{repeatingState()}}</button>
-    </span>
+<div class="box has-background-info player" id='player-box'>
+    <div id='player-contents' [@grow]="playerState">
+        <span *ngIf="!isExpanded">
+            <div>
+                <button (click)="expandPlayer()">expand</button>
+                <button (click)="previousSongPress()">Back</button>
+                <button (click)="playPausePress()">{{isPlaying()}}</button>
+                <button (click)="nextSongPress()">Next</button>
+                <span>{{songName}}</span>
+                <button (click)="shufflingPress()" class="is-pulled-right">{{shufflingState()}}</button>
+                <button (click)="repeatingPress()" class="is-pulled-right">{{repeatingState()}}</button>
+            </div>
+
+        </span>
+        <div *ngIf="isExpanded">
+            <button (click)="expandPlayer()">minimize</button>
+        </div>
+    </div>
 </div>

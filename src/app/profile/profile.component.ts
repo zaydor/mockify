@@ -95,6 +95,12 @@ export class ProfileComponent implements OnInit {
     });
   }
 
+  expandPlayer(isExpanded) {
+    const playerbox = document.getElementById('player-box');
+    console.log(isExpanded);
+    // (isExpanded) ? playerbox.style.minHeight = '100%' : playerbox.style.minHeight = '10%';
+  }
+
 
 
   openPlaylistDialog(event, index) {
