@@ -1,5 +1,7 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
+import { __geniusAccessToken__ } from '../secrets';
+import { getLyrics } from 'genius-lyrics-api';
 
 @Component({
   selector: 'app-player',
@@ -25,8 +27,22 @@ export class PlayerComponent implements OnInit {
   isPlayingMusic: boolean = false;
   currentSongName: string = '';
   access_token = '';
+
+  geniusOptions = {
+    apiKey: __geniusAccessToken__,
+    title: 'Blinding Lights',
+    artist: 'The Weeknd',
+    optimizeQuery: true
+  };
+
   @Input()
   songName: string;
+
+  @Input()
+  songURL: string;
+
+  @Input()
+  artistName: string;
 
   @Input()
   isSongPlaying: boolean;
@@ -36,6 +52,8 @@ export class PlayerComponent implements OnInit {
 
   @Input()
   repeatingIndex: number;
+
+  isAnimationFinished: boolean = true;
 
   @Output()
   playPauseAction = new EventEmitter();
@@ -55,15 +73,25 @@ export class PlayerComponent implements OnInit {
   @Output()
   expandAction = new EventEmitter();
 
+  currentSongLyrics: string;
+
+  isLyricView: boolean = false;
+
+
+
   constructor() {
   }
 
   ngOnInit(): void {
   }
 
-  expandPlayer() {
+  async expandPlayer() {
+    this.isAnimationFinished = false;
     this.isExpanded = !this.isExpanded;
     (this.isExpanded) ? this.playerState = 'expanded' : this.playerState = 'minimized';
+    await setTimeout(() => {
+      this.isAnimationFinished = true;
+    }, 300)
   }
 
   playPausePress() {
@@ -72,10 +100,12 @@ export class PlayerComponent implements OnInit {
 
   nextSongPress() {
     this.nextSongAction.emit();
+    this.isLyricView = false;
   }
 
   previousSongPress() {
     this.previousSongAction.emit();
+    this.isLyricView = false;
   }
 
   shufflingPress() {
@@ -109,6 +139,21 @@ export class PlayerComponent implements OnInit {
       return "Pause"
     } else {
       return "Play"
+    }
+  }
+
+  // genius
+
+  async getGenius() {
+    this.isLyricView = !this.isLyricView;
+    if (this.isLyricView) {
+      this.geniusOptions.title = this.songName;
+      this.geniusOptions.artist = this.artistName;
+      getLyrics(this.geniusOptions).then((lyrics) => {
+        console.log(lyrics);
+        this.currentSongLyrics = lyrics;
+        this.isLyricView = true;
+      });
     }
   }
 

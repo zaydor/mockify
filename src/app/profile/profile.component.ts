@@ -5,7 +5,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 import { child, get, getDatabase, ref, set, update } from 'firebase/database';
 import { PlaylistInfoDialogComponent } from '../playlist-info-dialog/playlist-info-dialog.component';
-import { __clientID__, __clientSecret__, __redirectURI__ } from '../secrets';
+import { __clientID__, __clientSecret__, __geniusAccessToken__, __redirectURI__ } from '../secrets';
 import { SpotifyApiService } from '../services/spotify-api.service';
 
 @Component({
@@ -19,6 +19,8 @@ export class ProfileComponent implements OnInit {
   private uid: string;
   private displayName: string;
   private isDialogOpen: boolean = false;
+  public songURL: string;
+  public artistName: string;
 
   public spotifyUser: {
     display_name: string,
@@ -130,7 +132,7 @@ export class ProfileComponent implements OnInit {
 
     dialogRef.componentInstance.songPlaying.subscribe(async () => {
       this.isSongPlaying = true;
-      await this.getCurrentSongName();
+      await this.getCurrentSongInfo();
     });
 
     dialogRef.afterClosed().subscribe(() => {
@@ -211,9 +213,22 @@ export class ProfileComponent implements OnInit {
     await this.spotifyApiService.setRepeatMode(this.access_token, this.repeatingIndex);
   }
 
+  async getCurrentSongInfo() {
+    const data = await this.spotifyApiService.getCurrentSongInfo(this.access_token);
+
+    const songID = data.songID;
+
+    this.currentSongPlaying = data.songName;
+
+    this.songURL = data.image.url;
+
+    this.artistName = data.artists[0].name;
+  }
+
 
   async playSong() {
     await this.spotifyApiService.playSong(this.access_token);
+    this.getCurrentSongInfo();
 
     this.isSongPlaying = true;
   }
@@ -226,13 +241,13 @@ export class ProfileComponent implements OnInit {
 
   async nextSongAction() {
     await this.spotifyApiService.nextSong(this.access_token).then(() => {
-      this.getCurrentSongName();
+      this.getCurrentSongInfo();
     });
   }
 
   async previousSongAction() {
     await this.spotifyApiService.previousSong(this.access_token).then(() => {
-      this.getCurrentSongName();
+      this.getCurrentSongInfo();
     });
   }
 

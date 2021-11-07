@@ -103,6 +103,22 @@ export class SpotifyApiService {
     });
   }
 
+  async getCurrentSongInfo(access_token) {
+    const result = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + access_token,
+      },
+    });
+
+    const data = await result.json();
+
+    console.log(data);
+
+    return { songName: data.item.name, songID: data.item.id, image: data.item.album.images[0], artists: data.item.artists }
+  }
+
   async getCurrentSongName(access_token) {
     const result = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
       method: 'GET',
