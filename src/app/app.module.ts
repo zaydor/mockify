@@ -23,6 +23,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { PlaylistBoxComponent } from './playlist-box/playlist-box.component';
 
 @NgModule({
   declarations: [
@@ -34,7 +35,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     ForgotPasswordComponent,
     RegisterComponent,
     PlaylistInfoDialogComponent,
-    PlayerComponent
+    PlayerComponent,
+    PlaylistBoxComponent
   ],
   imports: [
     BrowserModule,

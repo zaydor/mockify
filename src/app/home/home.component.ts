@@ -26,6 +26,7 @@ export class HomeComponent implements OnInit {
   // TODO: set up player on home page
   // TODO: make player clickable when in playlist info dialog
   // TODO: gray out songs that are not playable
+  // DONE - add quick play button to home page -- ALSO, should make playlist box its own component
   // DONE - build a full 'page' player && set up genius api with lyrics
   // DONE - clean up api calls
   // DONE - change icon if user playlist is already uploaded to front page
