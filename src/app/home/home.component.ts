@@ -4,6 +4,7 @@ import { AngularFireDatabase } from '@angular/fire/compat/database';
 import { MatDialog } from '@angular/material/dialog';
 import { getAuth, signOut } from 'firebase/auth';
 import { child, get, getDatabase, ref, update } from 'firebase/database';
+import { PlayerService } from '../player.service';
 import { PlaylistInfoDialogComponent } from '../playlist-info-dialog/playlist-info-dialog.component';
 import { __clientID__, __clientSecret__, __redirectURI__, __spotifyScope__ } from '../secrets';
 import { RealtimeDatabaseService } from '../services/realtime-database.service';
@@ -17,14 +18,12 @@ import { SpotifyApiService } from '../services/spotify-api.service';
 export class HomeComponent implements OnInit {
 
 
-  // TODO: BUG: clicking text in playlist box does not open playlist dialog
   // TODO: BUG: playing a song while shuffling does not play the correct song
   // TODO: BUG: 'client offline' error sometimes happens on loadup
   // TODO: BUG: genius lyrics are sometimes wonky
 
 
-  // TODO: set up player on home page
-  // TODO: make player clickable when in playlist info dialog
+  // DONE - set up player on home page
   // TODO: gray out songs that are not playable
   // DONE - add quick play button to home page -- ALSO, should make playlist box its own component
   // DONE - build a full 'page' player && set up genius api with lyrics
@@ -91,7 +90,7 @@ export class HomeComponent implements OnInit {
 
  */
 
-  constructor(private auth: AngularFireAuth, private database: AngularFireDatabase, private dialog: MatDialog, private spotifyApiService: SpotifyApiService) {
+  constructor(private auth: AngularFireAuth, private database: AngularFireDatabase, private dialog: MatDialog, private spotifyApiService: SpotifyApiService, public player: PlayerService) {
     this.myAuth = getAuth();
     console.log(this.myAuth.currentUser);
     this.auth.onAuthStateChanged(async (user) => {
@@ -142,13 +141,17 @@ export class HomeComponent implements OnInit {
   async setUp() {
     this.userPlaylists = [];
     this.access_token = await this.refreshAccessToken(this.refresh_token);
+    this.giveTokensToPlayer();
     await this.getSpotifyUserInfo().then(() => {
       this.getSpotifyUserPlaylists().then(() => {
         this.setFollowedPlaylists();
       });
     })
+  }
 
-
+  giveTokensToPlayer() {
+    this.player.access_token = this.access_token;
+    this.player.refresh_token = this.refresh_token;
   }
 
   setFollowedPlaylists() {
@@ -173,7 +176,7 @@ export class HomeComponent implements OnInit {
     if (this.isDialogOpen) return;
 
     const targetId = (event.target as HTMLElement).attributes.getNamedItem('id').textContent;
-    if (targetId.startsWith('middle')) return;
+    if (targetId.startsWith('middle') || targetId.startsWith('left') || targetId.startsWith('right')) return;
 
     this.isDialogOpen = true;
 
@@ -194,9 +197,11 @@ export class HomeComponent implements OnInit {
       data: [this.frontPagePlaylists[index], this.access_token]
     });
 
-    dialogRef.componentInstance.songPlaying.subscribe(async () => {
-      // this.isSongPlaying = true;
-      // await this.getCurrentSongName();
+    dialogRef.componentInstance.songPlaying.subscribe(async (uris) => {
+      this.player.isSongPlaying = true;
+      (this.player.isPlayerSetUp) ?
+        await this.spotifyApiService.playSongsFromPlaylist(this.access_token, uris, this.player.playerId) :
+        await this.spotifyApiService.playSongsFromPlaylist(this.access_token, uris);
     });
 
     dialogRef.afterClosed().subscribe(() => {
@@ -364,5 +369,55 @@ export class HomeComponent implements OnInit {
   ------------------------ END SPOTIFY API CALLS ------------------------
 
   */
+
+  async quickPlayPlaylist(index) {
+    // get tracks, get URIS, play uris
+    await this.getTracks(this.frontPagePlaylists[index].tracksURL).then(async (uris) => {
+      (this.player.isPlayerSetUp) ?
+        await this.spotifyApiService.playSongsFromPlaylist(this.access_token, uris, this.player.playerId) :
+        await this.spotifyApiService.playSongsFromPlaylist(this.access_token, uris);
+
+      await this.player.getCurrentSongInfo();
+      this.player.isSongPlaying = true;
+    });
+
+
+  }
+
+  async getTracks(tracksURL, offset?, oldUris?) {
+    if (!offset) offset = 0;
+
+    let uris = [];
+    if (oldUris) uris = oldUris;
+
+    const data = await this.spotifyApiService.getTracks(this.access_token, tracksURL, offset);
+    for (let i = 0; i < 100; i++) {
+      if (!data.items[i]) break;
+
+      const song = data.items[i].track;
+
+      const artists = [];
+      for (let j = 0; j < song.artists.length; j++) {
+        artists.push(song.artists[j].name);
+      }
+
+      uris.push(
+        song.uri
+      );
+
+    }
+
+    if (!offset) offset = 0;
+
+    const newOffset = 100 + offset;
+    console.log(newOffset);
+    console.log(data.total);
+    if (newOffset < data.total) {
+      this.getTracks(tracksURL, newOffset);
+    }
+
+    return uris;
+
+  }
 
 }
