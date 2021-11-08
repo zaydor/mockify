@@ -1,4 +1,4 @@
-<section class="hero is-fullheight has-background-primary">
+<section class="hero is-fullheight has-background-primary mb-6" style="padding-left: calc(100vw - 100%);">
     <div class="hero-body">
         <div class="container">
             <div class="box has-text-centered">
@@ -63,3 +63,13 @@
 
     </div>
 </section>
+
+<app-player id='player-box' [isPlayerSetUp]='this.player.isPlayerSetUp' [playerId]='this.player.playerId'
+    [isSongPlaying]='this.player.isSongPlaying' [songURL]='this.player.songURL' [artistName]='this.player.artistName'
+    [isShuffling]="this.player.isShuffling" [songName]="this.player.currentSongPlaying"
+    [repeatingIndex]="this.player.repeatingIndex" (playPauseAction)='this.player.playPauseAction()'
+    (nextSongAction)='this.player.nextSongAction()' (previousSongAction)='this.player.previousSongAction()'
+    (shufflingAction)='this.player.shuffleMusic()' (repeatingAction)='this.player.setRepeatMode()'
+    (setUpPlayerAction)='this.player.setUpPlayer()'
+    style="position: fixed; bottom: 0; right: 0; width: 100%; padding-left: calc(100vw - 100%);">
+</app-player>

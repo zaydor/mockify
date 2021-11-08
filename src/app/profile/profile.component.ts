@@ -6,6 +6,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { child, get, getDatabase, onValue, ref, remove, set, update } from 'firebase/database';
+import { PlayerService } from '../player.service';
 import { PlaylistInfoDialogComponent } from '../playlist-info-dialog/playlist-info-dialog.component';
 import { __clientID__, __clientSecret__, __geniusAccessToken__, __redirectURI__ } from '../secrets';
 import { SpotifyApiService } from '../services/spotify-api.service';
@@ -58,7 +59,7 @@ export class ProfileComponent implements OnInit {
   
   */
 
-  constructor(private route: ActivatedRoute, private router: Router, private auth: AngularFireAuth, private database: AngularFireDatabase, private dialog: MatDialog, private spotifyApiService: SpotifyApiService, private _snackBar: MatSnackBar) {
+  constructor(private route: ActivatedRoute, private router: Router, private auth: AngularFireAuth, private database: AngularFireDatabase, private dialog: MatDialog, private spotifyApiService: SpotifyApiService, private _snackBar: MatSnackBar, public player: PlayerService) {
   }
 
   ngOnInit(): void {
@@ -75,8 +76,10 @@ export class ProfileComponent implements OnInit {
           if (snapshot.exists() && snapshot.val() !== '') { // refresh token exists
             console.log('snapshot val: ' + snapshot.val());
             this.refresh_token = snapshot.val();
+            this.player.refresh_token = this.refresh_token;
 
             this.access_token = await this.refreshAccessToken(this.refresh_token);
+            this.player.access_token = this.access_token;
 
             this.setUpProfilePage();
 
@@ -104,13 +107,6 @@ export class ProfileComponent implements OnInit {
       }
     });
   }
-
-  expandPlayer(isExpanded) {
-    const playerbox = document.getElementById('player-box');
-    console.log(isExpanded);
-    // (isExpanded) ? playerbox.style.minHeight = '100%' : playerbox.style.minHeight = '10%';
-  }
-
   isPublished(index) {
     if (this.usersUploadedPlaylists[0]) {
       if (this.usersUploadedPlaylists[0].includes(this.userPlaylists[index].id)) {
@@ -285,73 +281,36 @@ export class ProfileComponent implements OnInit {
   }
 
   playPauseAction() {
-    (this.isSongPlaying) ? this.pauseSong() : this.playSong();
-
-    this.isSongPlaying = !this.isSongPlaying;
+    this.player.playPauseAction();
   }
 
   async setRepeatMode() {
-    if (this.repeatingIndex === 2) {
-      this.repeatingIndex = 0;
-    } else {
-      this.repeatingIndex++;
-    }
-
-    await this.spotifyApiService.setRepeatMode(this.access_token, this.repeatingIndex);
+    this.player.setRepeatMode();
   }
 
   async getCurrentSongInfo() {
-    const data = await this.spotifyApiService.getCurrentSongInfo(this.access_token);
-    if (!data) return;
-
-    this.currentSongId = data.songID;
-
-    this.currentSongPlaying = data.songName;
-
-    this.songURL = data.image.url;
-
-    this.artistName = data.artists[0].name;
+    this.player.getCurrentSongInfo();
   }
 
 
   async playSong() {
-    (this.isPlayerSetUp) ? await this.spotifyApiService.playSong(this.access_token, this.playerId) :
-      await this.spotifyApiService.playSong(this.access_token);
-
-    this.getCurrentSongInfo();
-
-    this.isSongPlaying = true;
+    this.player.playSong();
   }
 
   async pauseSong() {
-    await this.spotifyApiService.pauseSong(this.access_token);
-
-    this.isSongPlaying = false;
+    this.player.pauseSong();
   }
 
   async nextSongAction() {
-    await this.spotifyApiService.nextSong(this.access_token).then(() => {
-      this.getCurrentSongInfo();
-      this.isSongPlaying = true;
-    });
+    this.player.nextSongAction();
   }
 
   async previousSongAction() {
-    await this.spotifyApiService.previousSong(this.access_token).then(() => {
-      this.getCurrentSongInfo();
-      this.isSongPlaying = true;
-    });
+    this.player.previousSongAction();
   }
 
   async shuffleMusic() {
-    this.isShuffling = !this.isShuffling;
-
-    await this.spotifyApiService.shuffleMusic(this.access_token, this.isShuffling);
-  }
-
-  async getCurrentSongName() {
-    this.currentSongPlaying = await this.spotifyApiService.getCurrentSongName(this.access_token);
-    console.log(this.currentSongPlaying);
+    this.player.shuffleMusic();
   }
 
   async setUpProfilePage() {
@@ -415,46 +374,7 @@ export class ProfileComponent implements OnInit {
   */
 
   async setUpPlayer() {
-    await this.spotifyApiService.refreshAccessToken(this.refresh_token).then(async (token) => {
-      const player = new Spotify.Player({
-        name: 'Web Playback SDK Quick Start Player',
-        getOAuthToken: cb => { cb(token); },
-        volume: 0.5
-      });
-
-      await player.connect().then(async (success: boolean) => {
-        if (success) {
-          console.log("The Web Playback SDK successfully connected to spotify!");
-        }
-      });
-
-      player.addListener('ready', async ({ device_id }) => {
-        console.log("The Web Playback SDK is ready to play music!");
-        this.isPlayerSetUp = true;
-        this.playerId = device_id;
-        console.log('device id: ' + this.playerId);
-
-        await this.spotifyApiService.transferPlayback(this.access_token, this.playerId);
-      });
-
-      player.addListener('player_state_changed', async ({
-        position,
-        duration,
-        track_window: { current_track }
-      }) => {
-        console.log('Currently Playing', current_track);
-        console.log('Position in Song', position);
-        console.log('Duration of Song', duration);
-
-        if (current_track.id !== this.currentSongId) {
-          await this.getCurrentSongInfo().then(() => {
-          });
-        }
-      });
-    });
-
-
-
+    this.player.setUpPlayer();
   }
 
 }
