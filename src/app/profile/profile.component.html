@@ -24,28 +24,12 @@
                                         style="justify-content: center; display: grid; cursor: pointer; "
                                         *ngFor="let playlist of userPlaylists; index as i"
                                         (click)="openPlaylistDialog($event, i)">
-                                        <div id="{{'box-' + i}}"
-                                            style="max-width: max-content; max-height: max-content; cursor: pointer; display: grid;">
-                                            <div id="{{'container-' + i}}" class="my-container"
-                                                style="justify-self: center; min-width: 300px;">
-                                                <img id="{{'image-' + i}}" src="{{playlist.image.url}}" width="300px"
-                                                    class="image" />
-                                                <div id="{{'middle-' + i}}" class="middle" style="cursor: default;">
-                                                    <div id="{{'middleText-' + i}}" class="my-text"
-                                                        (click)="uploadPlaylistToFrontPage(i)">
-                                                        <mat-icon id="{{'middleIcon-' + i}}" aria-hidden="false"
-                                                            aria-label="publish playlist to home page">publish
-                                                        </mat-icon>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div id="{{'text-' + i}}"
-                                                style="max-width: max-content; justify-self: center;">
-                                                <p id="{{'nameText-' + i}}">{{playlist.name}}</p>
-                                                <p id="{{'descriptionText-' + i}}">{{playlist.description}}</p>
-                                                <p id="{{'tracksText-' + i}}">tracks: {{playlist.tracksTotal}}</p>
-                                            </div>
-                                        </div>
+                                        <app-playlist-box [playlistInfo]='playlist' [index]='i'
+                                            [playlistActionIcon]='isPublished(i)' [isFrontPage]='false'
+                                            (openPlaylistDialogAction)='openPlaylistDialog($event)'
+                                            (quickPlayAction)='quickPlayPlaylist($event)'
+                                            (uploadPlaylistAction)='uploadPlaylistToFrontPage($event)'>
+                                        </app-playlist-box>
 
                                     </div>
                                 </div>

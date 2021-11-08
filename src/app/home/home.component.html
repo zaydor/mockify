@@ -36,33 +36,12 @@
                                                 style="max-height: min-content; height: min-content; justify-content: center; display: grid; cursor: pointer; "
                                                 *ngFor="let playlist of shownFrontPagePlaylists; index as i"
                                                 (click)="openPlaylistDialog($event, i)">
-                                                <div id="{{'box-' + i}}"
-                                                    style="max-width: max-content; max-height: min-content; height: min-content; cursor: pointer; display: grid;">
-                                                    <div id="{{'container-' + i}}" class="my-container"
-                                                        style="justify-self: center; max-width: 300px; max-height: 300px; min-width: 300px; min-height: 300px;">
-                                                        <img id="{{'image-' + i}}" src="{{playlist.image.url}}"
-                                                            width="300px" class="image" />
-                                                        <div id="{{'middle-' + i}}" class="middle"
-                                                            style="cursor: default;">
-                                                            <div id="{{'middleText-' + i}}" class="my-text"
-                                                                (click)="followPlaylist(i)">
-                                                                <mat-icon id="{{'middleIcon-' + i}}" aria-hidden="false"
-                                                                    aria-label="follow playlist on spotify">
-                                                                    {{checkFollowed(i)}}</mat-icon>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div id="{{'text-' + i}}"
-                                                        style="max-width: max-content; justify-self: center;">
-                                                        <p>{{playlist.name}}</p>
-                                                        {{playlist.description}}
-                                                        <p>tracks: {{playlist.tracksTotal}}</p>
-                                                        <hr />
-                                                        <p>Uploaded by</p>
-                                                        <p>Mockify: {{playlist.displayName}} </p>
-                                                        <p>Spotify: {{playlist.spotifyDisplayName}}</p>
-                                                    </div>
-                                                </div>
+                                                <app-playlist-box [playlistInfo]='playlist' [index]='i'
+                                                    [playlistActionIcon]='checkFollowed(i)' [isFrontPage]='true'
+                                                    (openPlaylistDialogAction)='openPlaylistDialog($event)'
+                                                    (quickPlayAction)='quickPlayPlaylist($event)'
+                                                    (uploadPlaylistAction)='followPlaylist($event)'>
+                                                </app-playlist-box>
 
                                             </div>
                                         </div>
