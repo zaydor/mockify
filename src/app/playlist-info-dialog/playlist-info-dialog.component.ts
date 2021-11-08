@@ -34,13 +34,15 @@ export class PlaylistInfoDialogComponent implements OnInit {
   @Output()
   songPlaying = new EventEmitter();
 
+  private spotifyApiService: SpotifyApiService = new SpotifyApiService();
+
   /*
 
   ------------------------ PLAYLIST INFO DIALOG FUNCTIONS ------------------------
 
   */
 
-  constructor(public dialogRef: MatDialogRef<PlaylistInfoDialogComponent>, @Inject(MAT_DIALOG_DATA) public data: any, private spotifyApiService: SpotifyApiService) {
+  constructor(public dialogRef: MatDialogRef<PlaylistInfoDialogComponent>, @Inject(MAT_DIALOG_DATA) public data: any) {
     this.playlistInfo = this.data[0];
     this.access_token = this.data[1];
 
@@ -96,9 +98,7 @@ export class PlaylistInfoDialogComponent implements OnInit {
       uris.push(this.songsInfo[i].uri);
     }
 
-    await this.spotifyApiService.playSongsFromPlaylist(this.access_token, uris);
-
-    this.songPlaying.emit();
+    this.songPlaying.emit(uris);
   }
 
   async getTracks(offset?) {

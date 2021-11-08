@@ -63,8 +63,12 @@ export class SpotifyApiService {
     });
   }
 
-  async playSong(access_token) {
-    const result = await fetch('https://api.spotify.com/v1/me/player/play', {
+  async playSong(access_token, device_id?) {
+    let query;
+
+    (device_id) ? query = `?device_id=${device_id}` : query = '';
+
+    const result = await fetch(`https://api.spotify.com/v1/me/player/play${query}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -101,6 +105,22 @@ export class SpotifyApiService {
         'Authorization': 'Bearer ' + access_token
       }
     });
+  }
+
+  async getCurrentSongInfo(access_token) {
+    const result = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + access_token,
+      },
+    });
+
+    const data = await result.json();
+
+    console.log(data);
+
+    return { songName: data.item.name, songID: data.item.id, image: data.item.album.images[0], artists: data.item.artists }
   }
 
   async getCurrentSongName(access_token) {
@@ -191,8 +211,12 @@ export class SpotifyApiService {
     console.log('playlist followed');
   }
 
-  async playSongsFromPlaylist(access_token, uris) {
-    const result = await fetch('https://api.spotify.com/v1/me/player/play', {
+  async playSongsFromPlaylist(access_token, uris, device_id?) {
+    let query;
+
+    (device_id) ? query = `?device_id=${device_id}` : query = '';
+
+    const result = await fetch(`https://api.spotify.com/v1/me/player/play${query}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -217,6 +241,17 @@ export class SpotifyApiService {
     const data = await result.json();
 
     return data;
+  }
+
+  async transferPlayback(access_token, device_id) {
+    const result = fetch('https://api.spotify.com/v1/me/player', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + access_token,
+      },
+      body: JSON.stringify({ device_ids: [`${device_id}`], play: 'false' })
+    })
   }
 
 

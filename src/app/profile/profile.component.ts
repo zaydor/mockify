@@ -1,3 +1,4 @@
+/// <reference types="@types/spotify-web-playback-sdk" />
 import { Component, OnInit } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { AngularFireDatabase } from '@angular/fire/compat/database';
@@ -5,7 +6,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 import { child, get, getDatabase, ref, set, update } from 'firebase/database';
 import { PlaylistInfoDialogComponent } from '../playlist-info-dialog/playlist-info-dialog.component';
-import { __clientID__, __clientSecret__, __redirectURI__ } from '../secrets';
+import { __clientID__, __clientSecret__, __geniusAccessToken__, __redirectURI__ } from '../secrets';
 import { SpotifyApiService } from '../services/spotify-api.service';
 
 @Component({
@@ -19,6 +20,8 @@ export class ProfileComponent implements OnInit {
   private uid: string;
   private displayName: string;
   private isDialogOpen: boolean = false;
+  public songURL: string;
+  public artistName: string;
 
   public spotifyUser: {
     display_name: string,
@@ -37,10 +40,14 @@ export class ProfileComponent implements OnInit {
     tracksTotal: number
   }[];
 
+  currentSongId = '';
   currentSongPlaying = 'test';
   isSongPlaying: boolean = false;
   isShuffling: boolean = false;
   repeatingIndex = 0;
+
+  playerId;
+  isPlayerSetUp: boolean = false;
 
   /*
   
@@ -95,6 +102,12 @@ export class ProfileComponent implements OnInit {
     });
   }
 
+  expandPlayer(isExpanded) {
+    const playerbox = document.getElementById('player-box');
+    console.log(isExpanded);
+    // (isExpanded) ? playerbox.style.minHeight = '100%' : playerbox.style.minHeight = '10%';
+  }
+
 
 
   openPlaylistDialog(event, index) {
@@ -122,9 +135,13 @@ export class ProfileComponent implements OnInit {
       data: [this.userPlaylists[index], this.access_token]
     });
 
-    dialogRef.componentInstance.songPlaying.subscribe(async () => {
+    dialogRef.componentInstance.songPlaying.subscribe(async (uris) => {
       this.isSongPlaying = true;
-      await this.getCurrentSongName();
+      (this.isPlayerSetUp) ?
+        await this.spotifyApiService.playSongsFromPlaylist(this.access_token, uris, this.playerId) :
+        await this.spotifyApiService.playSongsFromPlaylist(this.access_token, uris);
+
+      // await this.getCurrentSongInfo().then();
     });
 
     dialogRef.afterClosed().subscribe(() => {
@@ -205,9 +222,24 @@ export class ProfileComponent implements OnInit {
     await this.spotifyApiService.setRepeatMode(this.access_token, this.repeatingIndex);
   }
 
+  async getCurrentSongInfo() {
+    const data = await this.spotifyApiService.getCurrentSongInfo(this.access_token);
+
+    this.currentSongId = data.songID;
+
+    this.currentSongPlaying = data.songName;
+
+    this.songURL = data.image.url;
+
+    this.artistName = data.artists[0].name;
+  }
+
 
   async playSong() {
-    await this.spotifyApiService.playSong(this.access_token);
+    (this.isPlayerSetUp) ? await this.spotifyApiService.playSong(this.access_token, this.playerId) :
+      await this.spotifyApiService.playSong(this.access_token);
+
+    this.getCurrentSongInfo();
 
     this.isSongPlaying = true;
   }
@@ -220,13 +252,13 @@ export class ProfileComponent implements OnInit {
 
   async nextSongAction() {
     await this.spotifyApiService.nextSong(this.access_token).then(() => {
-      this.getCurrentSongName();
+      this.getCurrentSongInfo();
     });
   }
 
   async previousSongAction() {
     await this.spotifyApiService.previousSong(this.access_token).then(() => {
-      this.getCurrentSongName();
+      this.getCurrentSongInfo();
     });
   }
 
@@ -290,5 +322,48 @@ export class ProfileComponent implements OnInit {
   ------------------------ END SPOTIFY API CALLS ------------------------
 
   */
+
+  async setUpPlayer() {
+    await this.spotifyApiService.refreshAccessToken(this.refresh_token).then(async (token) => {
+      const player = new Spotify.Player({
+        name: 'Web Playback SDK Quick Start Player',
+        getOAuthToken: cb => { cb(token); },
+        volume: 0.5
+      });
+
+      await player.connect().then(async (success: boolean) => {
+        if (success) {
+          console.log("The Web Playback SDK successfully connected to spotify!");
+        }
+      });
+
+      player.addListener('ready', async ({ device_id }) => {
+        console.log("The Web Playback SDK is ready to play music!");
+        this.isPlayerSetUp = true;
+        this.playerId = device_id;
+        console.log('device id: ' + this.playerId);
+
+        await this.spotifyApiService.transferPlayback(this.access_token, this.playerId);
+      });
+
+      player.addListener('player_state_changed', async ({
+        position,
+        duration,
+        track_window: { current_track }
+      }) => {
+        console.log('Currently Playing', current_track);
+        console.log('Position in Song', position);
+        console.log('Duration of Song', duration);
+
+        if (current_track.id !== this.currentSongId) {
+          await this.getCurrentSongInfo().then(() => {
+          });
+        }
+      });
+    });
+
+
+
+  }
 
 }

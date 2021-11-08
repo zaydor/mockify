@@ -1,10 +1,54 @@
-<div class="box has-background-info player">
-    <span>
-        <button (click)="previousSongPress()">Back</button>
-        <button (click)="playPausePress()">{{isPlaying()}}</button>
-        <button (click)="nextSongPress()">Next</button>
-        <span>{{songName}}</span>
-        <button (click)="shufflingPress()" class="is-pulled-right">{{shufflingState()}}</button>
-        <button (click)="repeatingPress()" class="is-pulled-right">{{repeatingState()}}</button>
-    </span>
+<div class="box has-background-info player" id='player-box'>
+    <div id='player-contents' [@grow]="playerState">
+        <span *ngIf="!isExpanded">
+            <div>
+                <button (click)="expandPlayer()">expand</button>
+                <button (click)="previousSongPress()">Back</button>
+                <button (click)="playPausePress()">{{isPlaying()}}</button>
+                <button (click)="nextSongPress()">Next</button>
+                <span>{{songName}}</span>
+                <button [disabled]="isPlayerSetUp" (click)="setUpPlayer()"
+                    class="is-pulled-right">{{getPlayerSetUpButtonText()}}</button>
+                <button (click)="shufflingPress()" class="is-pulled-right">{{shufflingState()}}</button>
+                <button (click)="repeatingPress()" class="is-pulled-right">{{repeatingState()}}</button>
+            </div>
+
+        </span>
+        <div *ngIf="isExpanded && isAnimationFinished">
+            <div id='header' style="max-height: 3vh; height:3vh">
+                <button (click)="expandPlayer()">minimize</button>
+            </div>
+            <div id='main' style="max-height: 82vh; height:82vh;">
+                <div class="has-text-centered">
+                    <div *ngIf='!isLyricView'>
+                        <img src="{{songURL}}" style="max-height: 80vh; height: 80vh;" />
+                    </div>
+                    <div *ngIf='isLyricView' class="box has-text-centered"
+                        style="min-width: 90vw; max-height: 75vh; height:75vh;">
+                        <div style="overflow-y: scroll; max-height:75vh; height:75vh; white-space: pre;">
+                            {{currentSongLyrics}}
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div id='footer' style="max-height: 10vh; height:10vh" class="has-text-centered">
+                <div>
+                    <span>{{songName}}</span>
+                </div>
+                <div>
+                    <span>
+                        <button (click)="shufflingPress()">{{shufflingState()}}</button>
+                        <button (click)="previousSongPress()">Back</button>
+                        <button (click)="playPausePress()">{{isPlaying()}}</button>
+                        <button (click)="nextSongPress()">Next</button>
+                        <button (click)="repeatingPress()">{{repeatingState()}}</button>
+                        <button (click)="getGenius()">lyrics</button>
+                        <button [disabled]="isPlayerSetUp"
+                            (click)="setUpPlayer()">{{getPlayerSetUpButtonText()}}</button>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
