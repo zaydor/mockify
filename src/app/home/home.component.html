@@ -42,7 +42,7 @@
                                                         style="justify-self: center; max-width: 300px; max-height: 300px; min-width: 300px; min-height: 300px;">
                                                         <img id="{{'image-' + i}}" src="{{playlist.image.url}}"
                                                             width="300px" class="image" />
-                                                        <div id="{{'middle-' + i}}" class="middle"
+                                                        <span id="{{'middle-' + i}}" class="middle"
                                                             style="cursor: default;">
                                                             <div id="{{'middleText-' + i}}" class="my-text"
                                                                 (click)="followPlaylist(i)">
@@ -50,7 +50,7 @@
                                                                     aria-label="follow playlist on spotify">
                                                                     {{checkFollowed(i)}}</mat-icon>
                                                             </div>
-                                                        </div>
+                                                        </span>
                                                     </div>
                                                     <div id="{{'text-' + i}}"
                                                         style="max-width: max-content; justify-self: center;">

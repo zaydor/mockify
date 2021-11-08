@@ -3,8 +3,9 @@ import { Component, OnInit } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { AngularFireDatabase } from '@angular/fire/compat/database';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
-import { child, get, getDatabase, ref, set, update } from 'firebase/database';
+import { child, get, getDatabase, onValue, ref, remove, set, update } from 'firebase/database';
 import { PlaylistInfoDialogComponent } from '../playlist-info-dialog/playlist-info-dialog.component';
 import { __clientID__, __clientSecret__, __geniusAccessToken__, __redirectURI__ } from '../secrets';
 import { SpotifyApiService } from '../services/spotify-api.service';
@@ -49,13 +50,15 @@ export class ProfileComponent implements OnInit {
   playerId;
   isPlayerSetUp: boolean = false;
 
+  usersUploadedPlaylists = [];
+
   /*
   
   ------------------------ PROFILE PAGE FUNCTIONS ------------------------
   
   */
 
-  constructor(private route: ActivatedRoute, private router: Router, private auth: AngularFireAuth, private database: AngularFireDatabase, private dialog: MatDialog, private spotifyApiService: SpotifyApiService) {
+  constructor(private route: ActivatedRoute, private router: Router, private auth: AngularFireAuth, private database: AngularFireDatabase, private dialog: MatDialog, private spotifyApiService: SpotifyApiService, private _snackBar: MatSnackBar) {
   }
 
   ngOnInit(): void {
@@ -108,13 +111,23 @@ export class ProfileComponent implements OnInit {
     // (isExpanded) ? playerbox.style.minHeight = '100%' : playerbox.style.minHeight = '10%';
   }
 
+  isPublished(index) {
+    if (this.usersUploadedPlaylists[0]) {
+      if (this.usersUploadedPlaylists[0].includes(this.userPlaylists[index].id)) {
+        return 'remove_circle_outline';
+      }
+    }
+
+    return 'publish';
+  }
+
 
 
   openPlaylistDialog(event, index) {
     if (this.isDialogOpen) return;
 
     const targetId = (event.target as HTMLElement).attributes.getNamedItem('id').textContent;
-    if (targetId.startsWith('middle')) return;
+    if (targetId.startsWith('middle') || targetId.startsWith('left') || targetId.startsWith('right')) return;
 
     this.isDialogOpen = true;
 
@@ -158,7 +171,65 @@ export class ProfileComponent implements OnInit {
 
   }
 
+  async getTracks(tracksURL, offset?, oldUris?) {
+    if (!offset) offset = 0;
+
+    let uris = [];
+    if (oldUris) uris = oldUris;
+
+    const data = await this.spotifyApiService.getTracks(this.access_token, tracksURL, offset);
+    for (let i = 0; i < 100; i++) {
+      if (!data.items[i]) break;
+
+      const song = data.items[i].track;
+
+      const artists = [];
+      for (let j = 0; j < song.artists.length; j++) {
+        artists.push(song.artists[j].name);
+      }
+
+      uris.push(
+        song.uri
+      );
+
+    }
+
+    if (!offset) offset = 0;
+
+    const newOffset = 100 + offset;
+    console.log(newOffset);
+    console.log(data.total);
+    if (newOffset < data.total) {
+      this.getTracks(tracksURL, newOffset);
+    }
+
+    return uris;
+
+  }
+
+  async quickPlayPlaylist(index) {
+    // get tracks, get URIS, play uris
+    await this.getTracks(this.userPlaylists[index].tracksURL).then(async (uris) => {
+      (this.isPlayerSetUp) ?
+        await this.spotifyApiService.playSongsFromPlaylist(this.access_token, uris, this.playerId) :
+        await this.spotifyApiService.playSongsFromPlaylist(this.access_token, uris);
+
+      await this.getCurrentSongInfo();
+      this.isSongPlaying = true;
+    });
+
+
+  }
+
   uploadPlaylistToFrontPage(index) {
+    if (this.usersUploadedPlaylists[0]) {
+      if (this.usersUploadedPlaylists[0].includes(this.userPlaylists[index].id)) {
+        this.removePlaylistFromFrontPage(this.userPlaylists[index].id);
+        this.openSnackBar(`${this.userPlaylists[index].name} has been removed from the front page!`);
+        return;
+      }
+    }
+
     const playlistToUpload = {
       id: this.userPlaylists[index].id,
       name: this.userPlaylists[index].name,
@@ -173,10 +244,17 @@ export class ProfileComponent implements OnInit {
     };
 
     set(ref(getDatabase(), `frontpage-playlists/${this.uid}/${playlistToUpload.id}`), playlistToUpload);
+    this.openSnackBar(`${this.userPlaylists[index].name} has been added to the front page!`);
   }
 
-  removePlaylistFromFrontPage(index) {
-    // remove from database
+  removePlaylistFromFrontPage(playlistId) {
+    remove(ref(getDatabase(), `frontpage-playlists/${this.uid}/${playlistId}`));
+  }
+
+  openSnackBar(message) {
+    this._snackBar.open(message, 'close', {
+      duration: 3000
+    });
   }
 
   /*
@@ -224,6 +302,7 @@ export class ProfileComponent implements OnInit {
 
   async getCurrentSongInfo() {
     const data = await this.spotifyApiService.getCurrentSongInfo(this.access_token);
+    if (!data) return;
 
     this.currentSongId = data.songID;
 
@@ -253,12 +332,14 @@ export class ProfileComponent implements OnInit {
   async nextSongAction() {
     await this.spotifyApiService.nextSong(this.access_token).then(() => {
       this.getCurrentSongInfo();
+      this.isSongPlaying = true;
     });
   }
 
   async previousSongAction() {
     await this.spotifyApiService.previousSong(this.access_token).then(() => {
       this.getCurrentSongInfo();
+      this.isSongPlaying = true;
     });
   }
 
@@ -276,7 +357,17 @@ export class ProfileComponent implements OnInit {
   async setUpProfilePage() {
     await this.getSpotifyUserInfo();
     this.userPlaylists = [];
-    await this.getSpotifyUserPlaylists();
+    await this.getSpotifyUserPlaylists().then(() => {
+      const testCountRef = ref(getDatabase(), `frontpage-playlists/${this.uid}`);
+      onValue(testCountRef, (snapshot) => {
+        this.usersUploadedPlaylists = [];
+        if (!snapshot.exists()) return;
+        const data = snapshot.val();
+        console.log(Object.keys(data));
+        this.usersUploadedPlaylists.push(Object.keys(data));
+        return data;
+      });
+    });
   }
 
   async getSpotifyUserInfo() {

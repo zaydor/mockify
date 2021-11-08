@@ -21,6 +21,8 @@ import { PlaylistInfoDialogComponent } from './playlist-info-dialog/playlist-inf
 import { PlayerComponent } from './player/player.component';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @NgModule({
   declarations: [
@@ -45,7 +47,9 @@ import { MatPaginatorModule } from '@angular/material/paginator';
     MatDialogModule,
     AngularFireModule,
     MatIconModule,
-    MatPaginatorModule
+    MatPaginatorModule,
+    MatSnackBarModule,
+    MatTooltipModule
   ],
   providers: [CookieService, RealtimeDatabaseService],
   bootstrap: [AppComponent]

@@ -30,14 +30,30 @@
                                                 style="justify-self: center; min-width: 300px;">
                                                 <img id="{{'image-' + i}}" src="{{playlist.image.url}}" width="300px"
                                                     class="image" />
-                                                <div id="{{'middle-' + i}}" class="middle" style="cursor: default;">
-                                                    <div id="{{'middleText-' + i}}" class="my-text"
-                                                        (click)="uploadPlaylistToFrontPage(i)">
-                                                        <mat-icon id="{{'middleIcon-' + i}}" aria-hidden="false"
-                                                            aria-label="publish playlist to home page">publish
-                                                        </mat-icon>
+                                                <span id="{{'middle-' + i}}" class="middle" style="cursor: default;">
+
+                                                    <div class="columns is-gapless">
+                                                        <div class="column mx-1" matTooltip="Play playlist">
+                                                            <div id="{{'leftText-' + i}}" (click)="quickPlayPlaylist(i)"
+                                                                class="my-text">
+                                                                <mat-icon id="{{'leftIcon-' + i}}" aria-hidden="false"
+                                                                    aria-label="publish playlist to home page">
+                                                                    play_arrow
+                                                                </mat-icon>
+                                                            </div>
+                                                        </div>
+                                                        <div class="column mx-1"
+                                                            matTooltip="Publish/delete playlist from front page">
+                                                            <div id="{{'middleText-' + i}}"
+                                                                (click)="uploadPlaylistToFrontPage(i)" class="my-text">
+                                                                <mat-icon id="{{'middleIcon-' + i}}" aria-hidden="false"
+                                                                    aria-label="publish playlist to front page">
+                                                                    {{isPublished(i)}}
+                                                                </mat-icon>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                </span>
                                             </div>
                                             <div id="{{'text-' + i}}"
                                                 style="max-width: max-content; justify-self: center;">

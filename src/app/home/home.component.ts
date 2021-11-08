@@ -19,14 +19,18 @@ export class HomeComponent implements OnInit {
 
   // TODO: BUG: clicking text in playlist box does not open playlist dialog
   // TODO: BUG: playing a song while shuffling does not play the correct song
+  // TODO: BUG: 'client offline' error sometimes happens on loadup
+  // TODO: BUG: genius lyrics are sometimes wonky
 
 
   // TODO: set up player on home page
+  // TODO: make player clickable when in playlist info dialog
+  // TODO: gray out songs that are not playable
   // DONE - build a full 'page' player && set up genius api with lyrics
   // DONE - clean up api calls
-  // TODO: change icon if user playlist is already uploaded to front page
-  // TODO: add a easy access button to play a playlist
-  // TODO: make the app pretty
+  // DONE - change icon if user playlist is already uploaded to front page
+  // DONE - add a easy access button to play a playlist
+  // TODO: make the app pretty, add tool tips
   // TODO: comments, readme, deploy
 
   private _realtimeDatabase: RealtimeDatabaseService = new RealtimeDatabaseService(this.database);
@@ -137,9 +141,12 @@ export class HomeComponent implements OnInit {
   async setUp() {
     this.userPlaylists = [];
     this.access_token = await this.refreshAccessToken(this.refresh_token);
-    await this.getSpotifyUserPlaylists().then(() => {
-      this.setFollowedPlaylists();
-    });
+    await this.getSpotifyUserInfo().then(() => {
+      this.getSpotifyUserPlaylists().then(() => {
+        this.setFollowedPlaylists();
+      });
+    })
+
 
   }
 
@@ -301,7 +308,7 @@ export class HomeComponent implements OnInit {
       offset = 0;
     }
 
-    const data = await this.spotifyApiService.getSpotifyUserPlaylists(this.access_token, this.spotifyUser.id, offset);
+    const data = await this.spotifyApiService.getSpotifyUserPlaylists(this.access_token, await this.spotifyUser.id, offset);
 
     for (let i = 0; i < 50; i++) {
       const item = data.items[i];
