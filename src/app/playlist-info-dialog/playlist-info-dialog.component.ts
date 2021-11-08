@@ -98,11 +98,7 @@ export class PlaylistInfoDialogComponent implements OnInit {
       uris.push(this.songsInfo[i].uri);
     }
 
-    await this.spotifyApiService.playSongsFromPlaylist(this.access_token, uris).then(() => {
-      this.songPlaying.emit();
-    });
-
-
+    this.songPlaying.emit(uris);
   }
 
   async getTracks(offset?) {

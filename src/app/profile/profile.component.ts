@@ -1,3 +1,4 @@
+/// <reference types="@types/spotify-web-playback-sdk" />
 import { Component, OnInit } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { AngularFireDatabase } from '@angular/fire/compat/database';
@@ -43,6 +44,9 @@ export class ProfileComponent implements OnInit {
   isSongPlaying: boolean = false;
   isShuffling: boolean = false;
   repeatingIndex = 0;
+
+  playerId;
+  isPlayerSetUp: boolean = false;
 
   /*
   
@@ -130,8 +134,12 @@ export class ProfileComponent implements OnInit {
       data: [this.userPlaylists[index], this.access_token]
     });
 
-    dialogRef.componentInstance.songPlaying.subscribe(async () => {
+    dialogRef.componentInstance.songPlaying.subscribe(async (uris) => {
       this.isSongPlaying = true;
+      (this.isPlayerSetUp) ?
+        await this.spotifyApiService.playSongsFromPlaylist(this.access_token, uris, this.playerId) :
+        await this.spotifyApiService.playSongsFromPlaylist(this.access_token, uris);
+
       await this.getCurrentSongInfo();
     });
 
@@ -227,7 +235,9 @@ export class ProfileComponent implements OnInit {
 
 
   async playSong() {
-    await this.spotifyApiService.playSong(this.access_token);
+    (this.isPlayerSetUp) ? await this.spotifyApiService.playSong(this.access_token, this.playerId) :
+      await this.spotifyApiService.playSong(this.access_token);
+
     this.getCurrentSongInfo();
 
     this.isSongPlaying = true;
@@ -311,5 +321,33 @@ export class ProfileComponent implements OnInit {
   ------------------------ END SPOTIFY API CALLS ------------------------
 
   */
+
+  async setUpPlayer() {
+    await this.spotifyApiService.refreshAccessToken(this.refresh_token).then(async (token) => {
+      const player = new Spotify.Player({
+        name: 'Web Playback SDK Quick Start Player',
+        getOAuthToken: cb => { cb(token); },
+        volume: 0.5
+      });
+
+      await player.connect().then(async (success: boolean) => {
+        if (success) {
+          console.log("The Web Playback SDK successfully connected to spotify!");
+        }
+      });
+
+      player.addListener('ready', async ({ device_id }) => {
+        console.log("The Web Playback SDK is ready to play music!");
+        this.isPlayerSetUp = true;
+        this.playerId = device_id;
+        console.log('device id: ' + this.playerId);
+
+        await this.spotifyApiService.transferPlayback(this.access_token, this.playerId);
+      })
+    });
+
+
+
+  }
 
 }

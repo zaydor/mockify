@@ -1,3 +1,5 @@
+/// <reference types="@types/spotify-web-playback-sdk" />
+
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
 import { __geniusAccessToken__ } from '../secrets';
@@ -53,6 +55,12 @@ export class PlayerComponent implements OnInit {
   @Input()
   repeatingIndex: number;
 
+  @Input()
+  playerId;
+
+  @Input()
+  isPlayerSetUp: boolean;
+
   isAnimationFinished: boolean = true;
 
   @Output()
@@ -73,16 +81,40 @@ export class PlayerComponent implements OnInit {
   @Output()
   expandAction = new EventEmitter();
 
+  @Output()
+  setUpPlayerAction = new EventEmitter();
+
   currentSongLyrics: string;
 
   isLyricView: boolean = false;
+  isLyricsLoaded: boolean = false;
 
 
 
   constructor() {
+    this.waitForSpotifyWebPlaybackSDKToLoad();
   }
 
   ngOnInit(): void {
+  }
+
+  public waitForSpotifyWebPlaybackSDKToLoad(): Promise<typeof Spotify> {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    window.onSpotifyWebPlaybackSDKReady = () => { };
+
+    return new Promise((resolve) => {
+      if (window.Spotify) {
+        resolve(window.Spotify);
+      } else {
+        window.onSpotifyWebPlaybackSDKReady = () => {
+          resolve(window.Spotify);
+        };
+      }
+    });
+  }
+
+  async setUpPlayer() {
+    this.setUpPlayerAction.emit();
   }
 
   async expandPlayer() {
@@ -99,13 +131,15 @@ export class PlayerComponent implements OnInit {
   }
 
   nextSongPress() {
-    this.nextSongAction.emit();
     this.isLyricView = false;
+    this.isLyricsLoaded = false;
+    this.nextSongAction.emit();
   }
 
   previousSongPress() {
-    this.previousSongAction.emit();
     this.isLyricView = false;
+    this.isLyricsLoaded = false;
+    this.previousSongAction.emit();
   }
 
   shufflingPress() {
@@ -145,16 +179,32 @@ export class PlayerComponent implements OnInit {
   // genius
 
   async getGenius() {
+
     this.isLyricView = !this.isLyricView;
+
+    if (this.isLyricsLoaded) return;
+
+    this.currentSongLyrics = 'Loading lyrics from Genius...';
+
     if (this.isLyricView) {
       this.geniusOptions.title = this.songName;
       this.geniusOptions.artist = this.artistName;
       getLyrics(this.geniusOptions).then((lyrics) => {
         console.log(lyrics);
+        this.isLyricsLoaded = true;
         this.currentSongLyrics = lyrics;
         this.isLyricView = true;
       });
     }
+  }
+
+  getPlayerSetUpButtonText() {
+    let btnTxt;
+    (this.isPlayerSetUp) ?
+      btnTxt = 'Connected' :
+      btnTxt = 'Connect to Spotify';
+
+    return btnTxt;
   }
 
 }

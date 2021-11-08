@@ -57,10 +57,11 @@
         </div>
     </section>
 
-    <app-player id='player-box' [isSongPlaying]='isSongPlaying' [songURL]='songURL' [artistName]='artistName'
-        [isShuffling]="isShuffling" [songName]="currentSongPlaying" [repeatingIndex]="repeatingIndex"
-        (playPauseAction)='playPauseAction()' (nextSongAction)='nextSongAction()'
+    <app-player id='player-box' [isPlayerSetUp]='isPlayerSetUp' [playerId]='playerId' [isSongPlaying]='isSongPlaying'
+        [songURL]='songURL' [artistName]='artistName' [isShuffling]="isShuffling" [songName]="currentSongPlaying"
+        [repeatingIndex]="repeatingIndex" (playPauseAction)='playPauseAction()' (nextSongAction)='nextSongAction()'
         (previousSongAction)='previousSongAction()' (shufflingAction)='shuffleMusic()'
-        (repeatingAction)='setRepeatMode()' style="position: fixed; bottom: 0; right: 0; width: 100%;">
+        (repeatingAction)='setRepeatMode()' (setUpPlayerAction)='setUpPlayer()'
+        style="position: fixed; bottom: 0; right: 0; width: 100%;">
     </app-player>
 </div>

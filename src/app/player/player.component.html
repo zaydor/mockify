@@ -7,6 +7,8 @@
                 <button (click)="playPausePress()">{{isPlaying()}}</button>
                 <button (click)="nextSongPress()">Next</button>
                 <span>{{songName}}</span>
+                <button [disabled]="isPlayerSetUp" (click)="setUpPlayer()"
+                    class="is-pulled-right">{{getPlayerSetUpButtonText()}}</button>
                 <button (click)="shufflingPress()" class="is-pulled-right">{{shufflingState()}}</button>
                 <button (click)="repeatingPress()" class="is-pulled-right">{{repeatingState()}}</button>
             </div>
@@ -41,7 +43,9 @@
                         <button (click)="playPausePress()">{{isPlaying()}}</button>
                         <button (click)="nextSongPress()">Next</button>
                         <button (click)="repeatingPress()">{{repeatingState()}}</button>
-                        <button (click)="getGenius()">genius</button>
+                        <button (click)="getGenius()">lyrics</button>
+                        <button [disabled]="isPlayerSetUp"
+                            (click)="setUpPlayer()">{{getPlayerSetUpButtonText()}}</button>
                     </span>
                 </div>
             </div>
