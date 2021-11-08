@@ -40,6 +40,7 @@ export class ProfileComponent implements OnInit {
     tracksTotal: number
   }[];
 
+  currentSongId = '';
   currentSongPlaying = 'test';
   isSongPlaying: boolean = false;
   isShuffling: boolean = false;
@@ -140,7 +141,7 @@ export class ProfileComponent implements OnInit {
         await this.spotifyApiService.playSongsFromPlaylist(this.access_token, uris, this.playerId) :
         await this.spotifyApiService.playSongsFromPlaylist(this.access_token, uris);
 
-      await this.getCurrentSongInfo();
+      // await this.getCurrentSongInfo().then();
     });
 
     dialogRef.afterClosed().subscribe(() => {
@@ -224,7 +225,7 @@ export class ProfileComponent implements OnInit {
   async getCurrentSongInfo() {
     const data = await this.spotifyApiService.getCurrentSongInfo(this.access_token);
 
-    const songID = data.songID;
+    this.currentSongId = data.songID;
 
     this.currentSongPlaying = data.songName;
 
@@ -343,7 +344,22 @@ export class ProfileComponent implements OnInit {
         console.log('device id: ' + this.playerId);
 
         await this.spotifyApiService.transferPlayback(this.access_token, this.playerId);
-      })
+      });
+
+      player.addListener('player_state_changed', async ({
+        position,
+        duration,
+        track_window: { current_track }
+      }) => {
+        console.log('Currently Playing', current_track);
+        console.log('Position in Song', position);
+        console.log('Duration of Song', duration);
+
+        if (current_track.id !== this.currentSongId) {
+          await this.getCurrentSongInfo().then(() => {
+          });
+        }
+      });
     });
 
 

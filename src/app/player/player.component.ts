@@ -119,6 +119,9 @@ export class PlayerComponent implements OnInit {
 
   async expandPlayer() {
     this.isAnimationFinished = false;
+    this.isLyricView = false;
+    this.isLyricsLoaded = false;
+    this.currentSongLyrics = 'Loading lyrics from Genius...';
     this.isExpanded = !this.isExpanded;
     (this.isExpanded) ? this.playerState = 'expanded' : this.playerState = 'minimized';
     await setTimeout(() => {
@@ -180,17 +183,23 @@ export class PlayerComponent implements OnInit {
 
   async getGenius() {
 
+    console.log('get genius');
+
     this.isLyricView = !this.isLyricView;
+
+    console.log('lyric view: ' + this.isLyricView);
+    console.log('is lyrics loaded: ' + this.isLyricsLoaded);
 
     if (this.isLyricsLoaded) return;
 
     this.currentSongLyrics = 'Loading lyrics from Genius...';
 
     if (this.isLyricView) {
+      console.log('getting lyrics');
       this.geniusOptions.title = this.songName;
       this.geniusOptions.artist = this.artistName;
       getLyrics(this.geniusOptions).then((lyrics) => {
-        console.log(lyrics);
+        console.log('got lyrics');
         this.isLyricsLoaded = true;
         this.currentSongLyrics = lyrics;
         this.isLyricView = true;
