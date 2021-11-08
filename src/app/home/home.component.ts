@@ -22,7 +22,7 @@ export class HomeComponent implements OnInit {
 
 
   // TODO: set up player on home page
-  // TODO: build a full 'page' player && set up genius api with lyrics
+  // DONE - build a full 'page' player && set up genius api with lyrics
   // DONE - clean up api calls
   // TODO: change icon if user playlist is already uploaded to front page
   // TODO: add a easy access button to play a playlist

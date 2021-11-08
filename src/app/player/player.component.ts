@@ -182,24 +182,16 @@ export class PlayerComponent implements OnInit {
   // genius
 
   async getGenius() {
-
-    console.log('get genius');
-
     this.isLyricView = !this.isLyricView;
-
-    console.log('lyric view: ' + this.isLyricView);
-    console.log('is lyrics loaded: ' + this.isLyricsLoaded);
 
     if (this.isLyricsLoaded) return;
 
     this.currentSongLyrics = 'Loading lyrics from Genius...';
 
     if (this.isLyricView) {
-      console.log('getting lyrics');
       this.geniusOptions.title = this.songName;
       this.geniusOptions.artist = this.artistName;
       getLyrics(this.geniusOptions).then((lyrics) => {
-        console.log('got lyrics');
         this.isLyricsLoaded = true;
         this.currentSongLyrics = lyrics;
         this.isLyricView = true;
