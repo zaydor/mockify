@@ -25,6 +25,7 @@ export class HomeComponent implements OnInit {
 
   // DONE - set up player on home page
   // TODO: gray out songs that are not playable
+  // TODO: order playlists -- by name, by uploaded/not uploaded (profile), by followed/not followed (home), by created date, by uploaded date (home)
   // DONE - add quick play button to home page -- ALSO, should make playlist box its own component
   // DONE - build a full 'page' player && set up genius api with lyrics
   // DONE - clean up api calls
@@ -83,6 +84,9 @@ export class HomeComponent implements OnInit {
   pageSize = 10;
 
   shownFrontPagePlaylists = [];
+  followedPlaylists = [];
+  notFollowedPlaylists = [];
+  currentSortingMethod = 'All';
 
   /*
 
@@ -159,9 +163,17 @@ export class HomeComponent implements OnInit {
       this.userPlaylists.forEach((userPlaylist) => {
         if (frontPagePlaylist.id === userPlaylist.id) {
           this.followedPlaylistIndexes.push(index);
+          this.followedPlaylists.push(frontPagePlaylist);
         }
       });
+
+      if (!this.followedPlaylists.includes(frontPagePlaylist)) {
+        this.notFollowedPlaylists.push(frontPagePlaylist);
+      }
     });
+
+
+
   }
 
   checkFollowed(index) {
@@ -227,19 +239,22 @@ export class HomeComponent implements OnInit {
       }
     }).then(() => {
       console.log(this.frontPagePlaylists);
-      this.frontPagePlaylistLength = this.frontPagePlaylists.length;
-      let indexEnd = 10;
-      if (this.frontPagePlaylistLength < indexEnd) {
-        indexEnd = this.frontPagePlaylistLength;
-      }
-
-      this.shownFrontPagePlaylists = [];
-      for (let i = 0; i < indexEnd; i++) {
-        this.shownFrontPagePlaylists.push(this.frontPagePlaylists[i]);
-      }
+      this.setShownFrontPagePlaylists(this.frontPagePlaylists);
     });
+  }
 
+  setShownFrontPagePlaylists(playlists) {
+    console.log(playlists);
+    this.frontPagePlaylistLength = playlists.length;
+    let indexEnd = 10;
+    if (this.frontPagePlaylistLength < indexEnd) {
+      indexEnd = this.frontPagePlaylistLength;
+    }
 
+    this.shownFrontPagePlaylists = [];
+    for (let i = 0; i < indexEnd; i++) {
+      this.shownFrontPagePlaylists.push(playlists[i]);
+    }
   }
 
   signAccountOut() {
@@ -287,6 +302,18 @@ export class HomeComponent implements OnInit {
   }
 
   ngOnInit(): void {
+  }
+
+  sortBy(sortingMethod: string) {
+    if (sortingMethod === 'All' && this.currentSortingMethod !== 'All') {
+      this.setShownFrontPagePlaylists(this.frontPagePlaylists);
+    } else if (sortingMethod === 'Followed' && this.currentSortingMethod !== 'Followed') {
+      this.setShownFrontPagePlaylists(this.followedPlaylists);
+    } else if (sortingMethod === 'Not Followed' && this.currentSortingMethod !== 'Not Followed') {
+      this.setShownFrontPagePlaylists(this.notFollowedPlaylists);
+    }
+
+    this.currentSortingMethod = sortingMethod;
   }
 
   /*

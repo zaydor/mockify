@@ -1,0 +1,5 @@
+@import 'bulma/css/bulma.css';
+
+::ng-deep #mat-menu-panel-0 {
+  overflow: hidden;
+}
