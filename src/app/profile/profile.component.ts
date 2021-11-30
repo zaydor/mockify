@@ -59,7 +59,7 @@ export class ProfileComponent implements OnInit {
   
   */
 
-  constructor(private route: ActivatedRoute, private router: Router, private auth: AngularFireAuth, private database: AngularFireDatabase, private dialog: MatDialog, private spotifyApiService: SpotifyApiService, private _snackBar: MatSnackBar, public player: PlayerService) {
+  constructor(private route: ActivatedRoute, private router: Router, private auth: AngularFireAuth, private database: AngularFireDatabase, private dialog: MatDialog, private spotifyApiService: SpotifyApiService, private _snackBar: MatSnackBar, public player?: PlayerService) {
   }
 
   ngOnInit(): void {
@@ -116,8 +116,6 @@ export class ProfileComponent implements OnInit {
 
     return 'publish';
   }
-
-
 
   openPlaylistDialog(event, index) {
     if (this.isDialogOpen) return;

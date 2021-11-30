@@ -24,6 +24,9 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { PlaylistBoxComponent } from './playlist-box/playlist-box.component';
+import { PlayerService } from './player.service';
+import { MatMenuModule } from '@angular/material/menu';
+import { SortingMenuComponent } from './sorting-menu/sorting-menu.component';
 
 @NgModule({
   declarations: [
@@ -36,7 +39,8 @@ import { PlaylistBoxComponent } from './playlist-box/playlist-box.component';
     RegisterComponent,
     PlaylistInfoDialogComponent,
     PlayerComponent,
-    PlaylistBoxComponent
+    PlaylistBoxComponent,
+    SortingMenuComponent
   ],
   imports: [
     BrowserModule,
@@ -51,9 +55,10 @@ import { PlaylistBoxComponent } from './playlist-box/playlist-box.component';
     MatIconModule,
     MatPaginatorModule,
     MatSnackBarModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatMenuModule
   ],
-  providers: [CookieService, RealtimeDatabaseService],
+  providers: [CookieService, RealtimeDatabaseService, PlayerService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

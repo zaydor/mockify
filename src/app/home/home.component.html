@@ -31,16 +31,30 @@
                                 <div>
                                     <h1 class="my-6">Front Page</h1>
                                     <div>
+                                        <!--div class="my-6">
+                                            <span>
+                                                <button mat-button [matMenuTriggerFor]="sortingMenu">Sort by</button>
+                                                <p>Currently sorting by: {{currentSortingMethod}}</p>
+                                            </span>
+
+                                            <mat-menu #sortingMenu="matMenu">
+                                                <button mat-menu-item (click)="sortBy('All')">All</button>
+                                                <button mat-menu-item (click)="sortBy('Followed')">Followed</button>
+                                                <button mat-menu-item (click)="sortBy('Not Followed')">Not
+                                                    Followed</button>
+                                            </mat-menu>
+
+                                        </div-->
                                         <div class="columns is-multiline is-centered">
                                             <div id="{{'box-' + i}}" class="box mx-2 column is-4 playlist-box"
                                                 style="max-height: min-content; height: min-content; justify-content: center; display: grid; cursor: pointer; "
-                                                *ngFor="let playlist of shownFrontPagePlaylists; index as i"
+                                                *ngFor="let playlist of frontPagePlaylists; index as i"
                                                 (click)="openPlaylistDialog($event, i)">
                                                 <app-playlist-box [playlistInfo]='playlist' [index]='i'
                                                     [playlistActionIcon]='checkFollowed(i)' [isFrontPage]='true'
                                                     (openPlaylistDialogAction)='openPlaylistDialog($event)'
                                                     (quickPlayAction)='quickPlayPlaylist($event)'
-                                                    (uploadPlaylistAction)='followPlaylist($event)'>
+                                                    (playlistAction)='followPlaylist($event)'>
                                                 </app-playlist-box>
 
                                             </div>

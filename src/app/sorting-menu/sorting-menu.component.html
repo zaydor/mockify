@@ -1,0 +1,10 @@
+<span>
+    <button mat-button [matMenuTriggerFor]="sortingMenu">Sort by</button>
+    <p>Currently sorting by: {{currentSortingMethod}}</p>
+</span>
+
+<mat-menu #sortingMenu="matMenu">
+    <div *ngFor="let sortingMethod of sortingOptions">
+        <button mat-menu-item (click)="sortBy(sortingMethod)">sortingMethod</button>
+    </div>
+</mat-menu>

@@ -1,10 +1,10 @@
 <div id="{{'box-' + index}}" style="max-width: max-content; max-height: max-content; cursor: pointer; display: grid;">
     <div id="{{'container-' + index}}" class="my-container" style="justify-self: center; min-width: 300px;">
         <img id="{{'image-' + index}}" src="{{playlistInfo.image.url}}" width="300px" class="image" />
-        <span id="{{'middle-' + index}}" class="middle" style="cursor: default;">
+        <span id="{{'span-' + index}}" class="middle" style="cursor: default;">
 
             <div class="columns is-gapless">
-                <div class="column mx-1" matTooltip="Play playlist">
+                <div id="{{'left-' + index}}" class="column mx-1" matTooltip="Play playlist">
                     <div id="{{'leftText-' + index}}" (click)="quickPlayPlaylist(index)" class="my-text">
                         <mat-icon id="{{'leftIcon-' + index}}" aria-hidden="false"
                             aria-label="publish playlist to home page">
@@ -12,7 +12,7 @@
                         </mat-icon>
                     </div>
                 </div>
-                <div class="column mx-1" matTooltip="{{getSpecialActionToolTipText()}}">
+                <div id="{{'middle-' + index}}" class="column mx-1" matTooltip="{{getSpecialActionToolTipText()}}">
                     <div id="{{'middleText-' + index}}" (click)="playlistSpecialAction(index)" class="my-text">
                         <mat-icon id="{{'middleIcon-' + index}}" aria-hidden="false"
                             aria-label="publish playlist to front page">
